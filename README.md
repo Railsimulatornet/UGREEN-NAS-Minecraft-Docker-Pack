@@ -1,5 +1,7 @@
 # UGREEN Minecraft Docker Pack
 
+![UGREEN Minecraft Docker Pack](assets/DockerPack.png)
+
 ## Deutsch
 
 Community-Projekt für **UGREEN NAS / UGOS** mit einem oder zwei **Minecraft Bedrock**-Servern, automatischen **Bedrockifier**-Backups, einem **Maintenance**-Container, Addon-Update-Automatisierung, Watchdog-Prüfungen und **SMTP / Apprise**-Benachrichtigungen.
