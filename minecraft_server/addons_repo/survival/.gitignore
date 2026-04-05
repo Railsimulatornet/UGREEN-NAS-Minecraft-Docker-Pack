@@ -1,0 +1,3 @@
+# Keep folder in Git, ignore local addon source files
+*
+!.gitignore

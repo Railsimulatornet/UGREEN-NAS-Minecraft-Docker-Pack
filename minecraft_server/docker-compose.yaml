@@ -1,0 +1,219 @@
+networks:
+  mcnet: {}
+
+services:
+  minecraftserver_creative:
+    profiles: ["creative"]
+    image: ${CREATIVE_IMAGE}
+    container_name: ${CREATIVE_CONTAINER_NAME}
+    restart: ${CREATIVE_RESTART}
+    cpus: "${CREATIVE_CPUS}"
+    mem_limit: ${CREATIVE_MEM_LIMIT}
+    stop_grace_period: ${CREATIVE_STOP_GRACE_PERIOD}
+    networks:
+      mcnet:
+        aliases: ["creative-server"]
+    environment:
+      TZ: "${STACK_TZ}"
+      UID: "${COMMON_UID}"
+      GID: "${COMMON_GID}"
+      EULA: "${MC_EULA}"
+      GAMEMODE: "${CREATIVE_GAMEMODE}"
+      SERVER_NAME: "${CREATIVE_SERVER_NAME}"
+      LEVEL_NAME: "${CREATIVE_LEVEL_NAME}"
+      DEFAULT_PLAYER_PERMISSION_LEVEL: "${CREATIVE_DEFAULT_PLAYER_PERMISSION_LEVEL}"
+      EMIT_SERVER_TELEMETRY: "${CREATIVE_EMIT_SERVER_TELEMETRY}"
+      ITEM_TRANSACTION_LOGGING_ENABLED: "${CREATIVE_ITEM_TRANSACTION_LOGGING_ENABLED}"
+      OPS: "${CREATIVE_OPS}"
+      ALLOW_CHEATS: "${CREATIVE_ALLOW_CHEATS}"
+      ENABLE_SSH: "${CREATIVE_ENABLE_SSH}"
+      VERSION: "${CREATIVE_VERSION}"
+      SERVER_PORT: "19132"
+      LEVEL_SEED: "${CREATIVE_LEVEL_SEED}"
+    volumes:
+      - ${CREATIVE_DATA_DIR}:/data
+    ports:
+      - "${CREATIVE_HOST_PORT_UDP}:19132/udp"
+      - "${CREATIVE_SSH_HOST_PORT}:2222/tcp"
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /data/server.properties || exit 1"]
+      start_period: ${MC_HEALTHCHECK_START_PERIOD}
+      interval: ${MC_HEALTHCHECK_INTERVAL}
+      timeout: ${MC_HEALTHCHECK_TIMEOUT}
+      retries: 10
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "${LOG_MAX_SIZE}"
+        max-file: "${LOG_MAX_FILE}"
+    labels:
+      - wud.watch=${WUD_WATCH_ENABLED}
+      - wud.watch.digest=${WUD_WATCH_DIGEST}
+
+  minecraftserver_survival:
+    profiles: ["survival"]
+    image: ${SURVIVAL_IMAGE}
+    container_name: ${SURVIVAL_CONTAINER_NAME}
+    restart: ${SURVIVAL_RESTART}
+    cpus: "${SURVIVAL_CPUS}"
+    mem_limit: ${SURVIVAL_MEM_LIMIT}
+    stop_grace_period: ${SURVIVAL_STOP_GRACE_PERIOD}
+    networks:
+      mcnet:
+        aliases: ["survival-server"]
+    environment:
+      TZ: "${STACK_TZ}"
+      UID: "${COMMON_UID}"
+      GID: "${COMMON_GID}"
+      EULA: "${MC_EULA}"
+      GAMEMODE: "${SURVIVAL_GAMEMODE}"
+      DIFFICULTY: "${SURVIVAL_DIFFICULTY}"
+      SERVER_NAME: "${SURVIVAL_SERVER_NAME}"
+      OPS: "${SURVIVAL_OPS}"
+      LEVEL_NAME: "${SURVIVAL_LEVEL_NAME}"
+      DEFAULT_PLAYER_PERMISSION_LEVEL: "${SURVIVAL_DEFAULT_PLAYER_PERMISSION_LEVEL}"
+      EMIT_SERVER_TELEMETRY: "${SURVIVAL_EMIT_SERVER_TELEMETRY}"
+      ITEM_TRANSACTION_LOGGING_ENABLED: "${SURVIVAL_ITEM_TRANSACTION_LOGGING_ENABLED}"
+      ENABLE_SSH: "${SURVIVAL_ENABLE_SSH}"
+      VERSION: "${SURVIVAL_VERSION}"
+      SERVER_PORT: "19132"
+      LEVEL_SEED: "${SURVIVAL_LEVEL_SEED}"
+    volumes:
+      - ${SURVIVAL_DATA_DIR}:/data
+    ports:
+      - "${SURVIVAL_HOST_PORT_TCP}:19132/tcp"
+      - "${SURVIVAL_HOST_PORT_UDP}:19132/udp"
+      - "${SURVIVAL_SSH_HOST_PORT}:2222/tcp"
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /data/server.properties || exit 1"]
+      start_period: ${MC_HEALTHCHECK_START_PERIOD}
+      interval: ${MC_HEALTHCHECK_INTERVAL}
+      timeout: ${MC_HEALTHCHECK_TIMEOUT}
+      retries: 10
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "${LOG_MAX_SIZE}"
+        max-file: "${LOG_MAX_FILE}"
+    labels:
+      - wud.watch=${WUD_WATCH_ENABLED}
+      - wud.watch.digest=${WUD_WATCH_DIGEST}
+
+  minecraftserver_backup:
+    image: ${BACKUP_IMAGE}
+    container_name: ${BACKUP_CONTAINER_NAME}
+    restart: ${BACKUP_RESTART}
+    cpus: "${BACKUP_CPUS}"
+    mem_limit: ${BACKUP_MEM_LIMIT}
+    networks: [mcnet]
+    environment:
+      TZ: "${STACK_TZ}"
+      PUID: "${COMMON_UID}"
+      PGID: "${COMMON_GID}"
+      UID: "${COMMON_UID}"
+      GID: "${COMMON_GID}"
+    volumes:
+      - ${BACKUP_CONFIG_DIR}:/config
+      - ${BACKUP_DATA_DIR}:/data
+      - ${CREATIVE_DATA_DIR}:/creative:ro
+      - ${SURVIVAL_DATA_DIR}:/survival:ro
+      - ./backup/scripts:/backup_scripts_ro:ro
+    labels:
+      - autoheal=${AUTOHEAL_LABEL_ENABLED}
+      - wud.watch=${WUD_WATCH_ENABLED}
+      - wud.watch.digest=${WUD_WATCH_DIGEST}
+    healthcheck:
+      test: ["CMD-SHELL", "bash /opt/bedrock/healthcheck.sh"]
+      start_period: ${BACKUP_HEALTHCHECK_START_PERIOD}
+      interval: ${BACKUP_HEALTHCHECK_INTERVAL}
+      timeout: ${BACKUP_HEALTHCHECK_TIMEOUT}
+      retries: 3
+    entrypoint: ["/bin/bash", "/backup_scripts_ro/backup_entrypoint.sh"]
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "${LOG_MAX_SIZE}"
+        max-file: "${LOG_MAX_FILE}"
+
+  minecraftserver_maintenance:
+    build:
+      context: .
+      dockerfile: Dockerfile.mc_maintenance
+    container_name: ${MAINTENANCE_CONTAINER_NAME}
+    restart: ${MAINTENANCE_RESTART}
+    cpus: "${MAINTENANCE_CPUS}"
+    mem_limit: ${MAINTENANCE_MEM_LIMIT}
+    networks: [mcnet]
+    environment:
+      TZ: "${STACK_TZ}"
+      TARGET_UID: "${COMMON_UID}"
+      TARGET_GID: "${COMMON_GID}"
+      APPRISE_URL: "${APPRISE_URL}"
+      SMTP_HOST: "${SMTP_HOST}"
+      SMTP_PORT: "${SMTP_PORT}"
+      SMTP_USER: "${SMTP_USER}"
+      SMTP_PASS: "${SMTP_PASS}"
+      SMTP_STARTTLS: "${SMTP_STARTTLS}"
+      SMTP_USE_TLS: "${SMTP_USE_TLS}"
+      MAIL_FROM: "${MAIL_FROM}"
+      MAIL_TO: "${MAIL_TO}"
+      MAIL_REPLY_TO: "${MAIL_REPLY_TO}"
+      MC_AUTO_RESTART: "${MC_AUTO_RESTART}"
+      COMPOSE_PROFILES: "${COMPOSE_PROFILES}"
+      HEALTH_MAX_AGE_SECS: "${HEALTH_MAX_AGE_SECS}"
+      WATCHDOG_MAX_AGE_SECS: "${WATCHDOG_MAX_AGE_SECS}"
+      HOST_NAME: "${HOST_NAME}"
+      DISPLAY_LIMIT: "${DISPLAY_LIMIT}"
+      BACKUP_DIR: "/backup"
+      BACKUP_CONFIG_ROOT: "/backup_config"
+      BACKUP_CONTAINER_NAME: "${BACKUP_CONTAINER_NAME}"
+      CREATIVE_CONTAINER_NAME: "${CREATIVE_CONTAINER_NAME}"
+      SURVIVAL_CONTAINER_NAME: "${SURVIVAL_CONTAINER_NAME}"
+      CREATIVE_BACKUP_SSH_HOST: "creative-server"
+      SURVIVAL_BACKUP_SSH_HOST: "survival-server"
+      CREATIVE_LEVEL_NAME: "${CREATIVE_LEVEL_NAME}"
+      SURVIVAL_LEVEL_NAME: "${SURVIVAL_LEVEL_NAME}"
+      BACKUP_INTERVAL: "${BACKUP_INTERVAL}"
+      BACKUP_STARTUP_DELAY: "${BACKUP_STARTUP_DELAY}"
+      BACKUP_MIN_INTERVAL: "${BACKUP_MIN_INTERVAL}"
+      BACKUP_RUN_INITIAL: "${BACKUP_RUN_INITIAL}"
+      BACKUP_TRIM_DAYS: "${BACKUP_TRIM_DAYS}"
+      BACKUP_KEEP_DAYS: "${BACKUP_KEEP_DAYS}"
+      BACKUP_MIN_KEEP: "${BACKUP_MIN_KEEP}"
+      MAINTENANCE_LANG: "${MAINTENANCE_LANG}"
+      RESTART_COOLDOWN_SECS: "${RESTART_COOLDOWN_SECS}"
+      WATCHDOG_DRY_RUN: "${WATCHDOG_DRY_RUN}"
+      WATCHDOG_NOTIFY: "${WATCHDOG_NOTIFY}"
+      NOTIFY_CHANNEL: "${NOTIFY_CHANNEL}"
+      NOTIFY_RETRIES: "${NOTIFY_RETRIES}"
+      NOTIFY_RETRY_DELAY: "${NOTIFY_RETRY_DELAY}"
+      NOTIFY_DRY_RUN: "${NOTIFY_DRY_RUN}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${BACKUP_CONFIG_DIR}:/backup_config
+      - ${BACKUP_DATA_DIR}:/backup:ro
+      - ${CREATIVE_DATA_DIR}:/creative
+      - ${SURVIVAL_DATA_DIR}:/survival
+      - ${ADDONS_REPO_DIR}:/repo
+      - ./maintenance/scripts:/scripts_ro:ro
+      - ./maintenance/cron/root:/crontab_ro:ro
+      - ./maintenance/www:/www:ro
+    entrypoint: ["/bin/sh", "-lc", "/scripts_ro/entrypoint.sh"]
+
+  minecraftserver_autoheal:
+    image: ${AUTOHEAL_IMAGE}
+    container_name: ${AUTOHEAL_CONTAINER_NAME}
+    restart: ${AUTOHEAL_RESTART}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      AUTOHEAL_INTERVAL: "${AUTOHEAL_INTERVAL}"
+      AUTOHEAL_START_PERIOD: "${AUTOHEAL_START_PERIOD}"
+      AUTOHEAL_DEFAULT_STOP_TIMEOUT: "${AUTOHEAL_DEFAULT_STOP_TIMEOUT}"
+    security_opt: ["no-new-privileges:true"]
+    labels:
+      - wud.watch=${WUD_WATCH_ENABLED}
+      - wud.watch.digest=${WUD_WATCH_DIGEST}

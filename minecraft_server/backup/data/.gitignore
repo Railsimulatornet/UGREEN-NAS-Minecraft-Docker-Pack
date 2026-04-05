@@ -1,0 +1,3 @@
+# Keep backup data out of Git
+*
+!.gitignore

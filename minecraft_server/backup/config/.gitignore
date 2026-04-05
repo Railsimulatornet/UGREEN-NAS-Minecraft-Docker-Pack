@@ -1,0 +1,5 @@
+# Generated/runtime Bedrockifier files
+config.yml
+.authorizedKeys
+.bedrockifierToken
+.service_is_healthy

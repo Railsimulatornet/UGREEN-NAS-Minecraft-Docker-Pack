@@ -1,0 +1,3 @@
+# Keep folder in Git, ignore local archive content
+*
+!.gitignore

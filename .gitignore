@@ -1,0 +1,8 @@
+# Local release archives and editable manuals
+*.zip
+*.docx
+
+# OS / editor files
+Thumbs.db
+Desktop.ini
+.DS_Store

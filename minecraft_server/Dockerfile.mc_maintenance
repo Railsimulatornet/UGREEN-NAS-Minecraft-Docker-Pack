@@ -1,0 +1,7 @@
+FROM alpine:3.23.3
+
+# Copyright Roman Glos 2026
+# Maintenance image for the Minecraft Docker Pack
+# All required packages are installed at build time for better reproducibility
+# and a smaller attack surface at runtime.
+RUN apk add --no-cache     bash coreutils ca-certificates tzdata     libarchive-tools zip unzip jq rsync curl     findutils python3 py3-pip     lighttpd docker-cli util-linux git  && update-ca-certificates  && [ -x /bin/bash ] || ln -sf /usr/bin/bash /bin/bash

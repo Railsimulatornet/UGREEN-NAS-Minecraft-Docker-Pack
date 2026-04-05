@@ -1,0 +1,18 @@
+# Copyright Roman Glos 2026
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+TZ=Europe/Berlin
+
+# 00:05 — tägliche Bilanz gemäß NOTIFY_CHANNEL (Vortag sicher final)
+5 0 * * * flock -n /tmp/notify.lock  /bin/sh /scripts/notify.sh >>/dev/stdout 2>&1
+
+# 04:30 — täglicher Neustart der Minecraft-Container inkl. Backup
+30 4 * * * flock -n /tmp/restart.lock /bin/sh /scripts/restart_daily.sh >>/dev/stdout 2>&1
+
+# 10/40 — Addons-Update (braucht bash)
+10,40 * * * * flock -n /tmp/addons.lock  /bin/bash /scripts/addons_update.sh >>/dev/stdout 2>&1
+
+# WATCHDOG — alle 20 Min prüfen, ob im letzten 90-Min-Fenster ein Backup kam
+*/20 * * * * flock -n /tmp/mbk_watchdog.lock /bin/sh /scripts/watchdog.sh >>/dev/stdout 2>&1
+
+10,40 * * * * echo "cron beacon $(date)" >>/dev/stdout 2>&1
