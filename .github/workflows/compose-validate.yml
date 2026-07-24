@@ -1,0 +1,58 @@
+name: Compose Validation
+
+on:
+  pull_request:
+    paths:
+      - minecraft_server/.env
+      - minecraft_server/docker-compose.yaml
+      - .github/workflows/compose-validate.yml
+  push:
+    branches:
+      - main
+    paths:
+      - minecraft_server/.env
+      - minecraft_server/docker-compose.yaml
+      - .github/workflows/compose-validate.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Validate Docker Compose configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          docker compose \
+            --env-file minecraft_server/.env \
+            -f minecraft_server/docker-compose.yaml \
+            config --quiet
+
+      - name: Verify pinned Autoheal integration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          resolved="$(
+            docker compose \
+              --env-file minecraft_server/.env \
+              -f minecraft_server/docker-compose.yaml \
+              config
+          )"
+
+          grep -Fq 'image: railsimulatornet/autoheal:1.0.0' <<<"$resolved"
+          grep -Fq 'target: /state' <<<"$resolved"
+          grep -Fq 'AUTOHEAL_COOLDOWN: "300"' <<<"$resolved"
+          grep -Fq 'AUTOHEAL_MAX_RESTARTS: "3"' <<<"$resolved"
+
+          if grep -Fq 'willfarrell/autoheal' <<<"$resolved"; then
+            echo 'Obsolete willfarrell/autoheal image is still present.' >&2
+            exit 1
+          fi
