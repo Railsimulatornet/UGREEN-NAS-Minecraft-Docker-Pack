@@ -1,6 +1,10 @@
 name: Release
 
 on:
+  pull_request:
+    paths:
+      - VERSION
+      - .github/workflows/release.yml
   push:
     branches:
       - main
@@ -10,15 +14,18 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  release:
+  validate:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
 
     steps:
       - name: Check out repository
@@ -41,10 +48,40 @@ jobs:
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "tag=v${version}" >> "$GITHUB_OUTPUT"
 
-      - name: Build release archive
+      - name: Verify release archive can be built
         shell: bash
         env:
           VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          archive="UGREEN-NAS-Minecraft-Docker-Pack-${VERSION}.zip"
+          git archive \
+            --format=zip \
+            --prefix="UGREEN-NAS-Minecraft-Docker-Pack-${VERSION}/" \
+            --output="$archive" \
+            HEAD
+
+          test -s "$archive"
+          sha256sum "$archive"
+
+  release:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Build release archive
+        shell: bash
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
         run: |
           set -euo pipefail
 
@@ -61,8 +98,8 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.version.outputs.version }}
-          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ needs.validate.outputs.version }}
+          TAG: ${{ needs.validate.outputs.tag }}
         run: |
           set -euo pipefail
 
