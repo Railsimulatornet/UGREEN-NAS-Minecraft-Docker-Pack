@@ -33,6 +33,8 @@ minecraft_server/
 └── survival/
 ```
 
+Die `Dockerfile.mc_maintenance` bleibt im Repository als nachvollziehbare Build-Quelle für `railsimulatornet/minecraft-maintenance`. Die produktive Compose-Datei baut sie nicht lokal, sondern verwendet das veröffentlichte Image. Im bereinigten ZIP-Benutzerpaket ist die Dockerfile deshalb nicht enthalten.
+
 ### Schnellstart
 
 1. Repository oder Release herunterladen.
@@ -108,6 +110,8 @@ minecraft_server/
 ├── maintenance/
 └── survival/
 ```
+
+`Dockerfile.mc_maintenance` remains in the repository as the reproducible build source for `railsimulatornet/minecraft-maintenance`. The production Compose file does not build it locally and uses the published image instead. The Dockerfile is therefore excluded from the clean user ZIP package.
 
 ### Quick start
 
