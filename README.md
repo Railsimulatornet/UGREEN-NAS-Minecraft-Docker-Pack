@@ -4,7 +4,7 @@
 
 ## Deutsch
 
-Community-Projekt für **UGREEN NAS / UGOS** mit einem oder zwei **Minecraft Bedrock**-Servern, automatischen **Bedrockifier**-Backups, einem **Maintenance**-Container, Addon-Update-Automatisierung, Watchdog-Prüfungen und **SMTP / Apprise**-Benachrichtigungen.
+Community-Projekt für **UGREEN NAS / UGOS** mit einem oder zwei **Minecraft Bedrock**-Servern, automatischen **Bedrockifier**-Backups, einem **Maintenance**-Container, Addon-Update-Automatisierung, Watchdog-Prüfungen, kontrolliertem **Autoheal** und **SMTP / Apprise**-Benachrichtigungen.
 
 ### Enthalten
 
@@ -13,6 +13,8 @@ Community-Projekt für **UGREEN NAS / UGOS** mit einem oder zwei **Minecraft Bed
 - optionale Creative- und Survival-Serverprofile
 - Backup-Container mit konfigurierbaren Zielen und Intervallen
 - Maintenance-Skripte für Benachrichtigungen, Watchdog und Addon-Updates
+- `railsimulatornet/autoheal:1.0.0` mit Cooldown und Schutz vor Neustartschleifen
+- persistente Autoheal-Neustarthistorie im lokalen Ordner `autoheal-state/`
 - relative Projektpfade für eine UGOS-freundliche Bereitstellung
 - Installationshandbuch als PDF
 
@@ -24,6 +26,7 @@ minecraft_server/
 ├── docker-compose.yaml
 ├── Dockerfile.mc_maintenance
 ├── addons_repo/
+├── autoheal-state/        # wird beim ersten Start angelegt
 ├── backup/
 ├── creative/
 ├── maintenance/
@@ -40,6 +43,29 @@ minecraft_server/
 6. Die vorhandene `docker-compose.yaml` importieren.
 7. Projekt bereitstellen und den ersten Start vollständig abwarten.
 
+### Autoheal 1.0.0
+
+Das Docker Pack verwendet den festen produktiven Tag `railsimulatornet/autoheal:1.0.0`. Autoheal überwacht passend markierte Container mit einem Docker-Healthcheck und startet sie bei `unhealthy` kontrolliert neu.
+
+Die Standardkonfiguration enthält:
+
+- 120 Sekunden Startphase
+- 30 Sekunden Prüfintervall
+- 300 Sekunden Cooldown zwischen Neustarts
+- höchstens 3 Neustarts innerhalb von 1800 Sekunden
+- persistente Neustarthistorie unter `./autoheal-state`
+- Dry-Run- und Debug-Optionen in der `.env`
+
+Der Backup-Healthcheck prüft den internen Dienst auf TCP-Port 8080 und verwendet eine Startphase von 150 Sekunden. Dadurch wird kein im Image nicht vorhandenes Healthcheck-Skript mehr aufgerufen und Autoheal gerät nicht durch einen dauerhaft falschen Zustand in eine Neustartschleife.
+
+### Aktualisierung einer vorhandenen Installation
+
+Die eigene produktive `.env` nicht vollständig überschreiben. Stattdessen mindestens die neuen beziehungsweise geänderten `AUTOHEAL_*`-Werte aus der Repository-Datei übernehmen und anschließend die neue `docker-compose.yaml` verwenden. Für eine reproduzierbare Installation sollte der feste Image-Tag `1.0.0` beibehalten werden.
+
+### Sicherheitshinweis
+
+Autoheal benötigt Zugriff auf `/var/run/docker.sock`, um Container neu starten zu können. Dieser Socket ermöglicht weitreichende Kontrolle über Docker und damit faktisch über den Host. Verwende ausschließlich vertrauenswürdige Images und schütze Projektdateien und Docker-Zugriff vor unberechtigten Änderungen.
+
 ### Hinweise
 
 - Dies ist ein **Community-Projekt**, kein offizielles UGREEN-Produkt.
@@ -48,14 +74,13 @@ minecraft_server/
 
 ### Copyright
 
-Copyright Roman Glos 2026  
-UGREEN NAS Community
+Copyright (c) 2026 Roman Glos / Railsimulatornet
 
 ---
 
 ## English
 
-Community project for **UGREEN NAS / UGOS** with one or two **Minecraft Bedrock** servers, automatic **Bedrockifier** backups, a **Maintenance** container, addon update automation, watchdog checks and **SMTP / Apprise** notifications.
+Community project for **UGREEN NAS / UGOS** with one or two **Minecraft Bedrock** servers, automatic **Bedrockifier** backups, a **Maintenance** container, addon update automation, watchdog checks, controlled **Autoheal** recovery and **SMTP / Apprise** notifications.
 
 ### Included
 
@@ -64,6 +89,8 @@ Community project for **UGREEN NAS / UGOS** with one or two **Minecraft Bedrock*
 - optional creative and survival server profiles
 - backup container with configurable targets and intervals
 - maintenance scripts for notifications, watchdog checks and addon updates
+- `railsimulatornet/autoheal:1.0.0` with cooldown and restart-loop protection
+- persistent Autoheal restart history in the local `autoheal-state/` directory
 - relative project paths for UGOS-friendly deployment
 - installation manual as PDF
 
@@ -75,6 +102,7 @@ minecraft_server/
 ├── docker-compose.yaml
 ├── Dockerfile.mc_maintenance
 ├── addons_repo/
+├── autoheal-state/        # created on first startup
 ├── backup/
 ├── creative/
 ├── maintenance/
@@ -91,6 +119,29 @@ minecraft_server/
 6. Import the existing `docker-compose.yaml`.
 7. Deploy the project and wait until the first startup is fully complete.
 
+### Autoheal 1.0.0
+
+The Docker Pack uses the fixed production tag `railsimulatornet/autoheal:1.0.0`. Autoheal monitors selected containers with a Docker healthcheck and restarts them in a controlled manner when they become `unhealthy`.
+
+The default configuration includes:
+
+- 120-second startup delay
+- 30-second check interval
+- 300-second cooldown between restarts
+- no more than 3 restarts within 1800 seconds
+- persistent restart history under `./autoheal-state`
+- dry-run and debug options in `.env`
+
+The backup healthcheck tests the internal service on TCP port 8080 and uses a 150-second startup period. This avoids calling a healthcheck script that is not present in the image and prevents Autoheal from entering a restart loop because of a permanently incorrect health state.
+
+### Updating an existing installation
+
+Do not completely overwrite your customized production `.env`. Instead, copy at least the new or changed `AUTOHEAL_*` values from the repository file and then use the new `docker-compose.yaml`. Keep the fixed `1.0.0` image tag for a reproducible deployment.
+
+### Security notice
+
+Autoheal requires access to `/var/run/docker.sock` so it can restart containers. This socket provides extensive control over Docker and effectively over the host. Use only trusted images and protect project files and Docker access from unauthorized changes.
+
 ### Notes
 
 - This is a **community project**, not an official UGREEN product.
@@ -99,5 +150,4 @@ minecraft_server/
 
 ### Copyright
 
-Copyright Roman Glos 2026  
-UGREEN NAS Community
+Copyright (c) 2026 Roman Glos / Railsimulatornet
