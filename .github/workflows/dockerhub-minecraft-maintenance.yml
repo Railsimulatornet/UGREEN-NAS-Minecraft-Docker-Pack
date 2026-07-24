@@ -4,23 +4,20 @@ on:
   pull_request:
     paths:
       - "minecraft_server/Dockerfile.mc_maintenance"
+      - "minecraft_server/MAINTENANCE_IMAGE_VERSION"
       - ".github/workflows/dockerhub-minecraft-maintenance.yml"
   push:
     branches:
       - main
     paths:
       - "minecraft_server/Dockerfile.mc_maintenance"
+      - "minecraft_server/MAINTENANCE_IMAGE_VERSION"
       - ".github/workflows/dockerhub-minecraft-maintenance.yml"
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Optional version, for example 1.0.0"
-        required: false
-        default: ""
-        type: string
 
 env:
   IMAGE_NAME: railsimulatornet/minecraft-maintenance
+  VERSION_FILE: minecraft_server/MAINTENANCE_IMAGE_VERSION
 
 jobs:
   build:
@@ -41,28 +38,25 @@ jobs:
       - name: Prepare image tags
         id: image
         shell: bash
-        env:
-          VERSION: ${{ github.event.inputs.version || '' }}
         run: |
           set -euo pipefail
 
-          tags="${IMAGE_NAME}:latest"
+          version="$(tr -d '[:space:]' < "${VERSION_FILE}")"
 
-          if [[ -n "${VERSION}" ]]; then
-            if [[ ! "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "Version must use the format X.Y.Z, for example 1.0.0." >&2
-              exit 1
-            fi
-
-            minor="${VERSION%.*}"
-            tags+=$'\n'"${IMAGE_NAME}:${VERSION}"
-            tags+=$'\n'"${IMAGE_NAME}:${minor}"
+          if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "${VERSION_FILE} must contain a version in X.Y.Z format." >&2
+            exit 1
           fi
+
+          minor="${version%.*}"
 
           {
             echo "tags<<EOF"
-            printf '%s\n' "${tags}"
+            echo "${IMAGE_NAME}:${version}"
+            echo "${IMAGE_NAME}:${minor}"
+            echo "${IMAGE_NAME}:latest"
             echo "EOF"
+            echo "version=${version}"
           } >> "${GITHUB_OUTPUT}"
 
       - name: Log in to Docker Hub
@@ -82,5 +76,6 @@ jobs:
           no-cache: true
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.image.outputs.tags }}
+          labels: org.opencontainers.image.version=${{ steps.image.outputs.version }}
           provenance: mode=max
           sbom: true
