@@ -1,0 +1,152 @@
+name: Docker Pack Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - PACK_VERSION
+      - .github/workflows/pack-release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Prepare release metadata
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="$(tr -d '[:space:]' < PACK_VERSION)"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "PACK_VERSION must contain a version in X.Y.Z format." >&2
+            exit 1
+          fi
+
+          tag="v${version}"
+          publish=true
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+            publish=false
+          fi
+
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "publish=${publish}" >> "$GITHUB_OUTPUT"
+
+      - name: Build clean user package
+        if: steps.release.outputs.publish == 'true'
+        shell: bash
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          bundle="UGREEN_Minecraft_Docker_Pack_v${VERSION}"
+          asset="${bundle}.zip"
+
+          mkdir -p "dist/${bundle}"
+          cp -a README.md "dist/${bundle}/"
+          cp -a minecraft_server "dist/${bundle}/"
+
+          # The repository keeps the Dockerfile as the reproducible source for
+          # railsimulatornet/minecraft-maintenance. The ready-to-use user bundle
+          # pulls that image and therefore does not need local build sources.
+          rm -f "dist/${bundle}/minecraft_server/Dockerfile.mc_maintenance"
+          rm -f "dist/${bundle}/minecraft_server/MAINTENANCE_IMAGE_VERSION"
+
+          shopt -s nullglob
+          for file in LICENSE LICENSE.* COPYING COPYING.* *.pdf; do
+            cp -a "$file" "dist/${bundle}/"
+          done
+          shopt -u nullglob
+
+          if [[ -d assets ]]; then
+            cp -a assets "dist/${bundle}/"
+          fi
+
+          (
+            cd dist
+            zip -r "$asset" "$bundle"
+          )
+
+          test -s "dist/${asset}"
+          echo "ASSET=dist/${asset}" >> "$GITHUB_ENV"
+
+      - name: Create bilingual release notes
+        if: steps.release.outputs.publish == 'true'
+        shell: bash
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          cat > release-notes.md <<EOF
+          ## Deutsch
+
+          UGREEN Minecraft Docker Pack ${VERSION}
+
+          ### Änderungen
+
+          - eigener stabiler Autoheal-Release \`railsimulatornet/autoheal:1.0.0\`
+          - Cooldown und persistentes Neustartlimit gegen Endlosschleifen
+          - persistente Autoheal-Historie unter \`./autoheal-state\`
+          - Dry-Run- und Debug-Konfiguration über die \`.env\`
+          - korrigierter Backup-Healthcheck über TCP-Port 8080
+          - Backup-Healthcheck-Startphase auf 150 Sekunden erhöht
+          - feste Maintenance- und Autoheal-Image-Tags für reproduzierbare Installationen
+          - automatische Compose-Validierung in GitHub Actions
+
+          Das PDF-Handbuch bleibt als grundlegende Installationsanleitung unverändert. Aktuelle technische Details stehen in \`README.md\`, \`.env\` und \`docker-compose.yaml\`.
+
+          Der zusätzliche ZIP-Download ist das bereinigte Benutzerpaket. Die im Repository weiterhin vorhandene \`Dockerfile.mc_maintenance\` dient ausschließlich als nachvollziehbare Build-Quelle für das veröffentlichte Maintenance-Image und ist im Benutzerpaket nicht enthalten.
+
+          ## English
+
+          UGREEN Minecraft Docker Pack ${VERSION}
+
+          ### Changes
+
+          - stable custom Autoheal image \`railsimulatornet/autoheal:1.0.0\`
+          - cooldown and persistent restart limits against endless loops
+          - persistent Autoheal history under \`./autoheal-state\`
+          - dry-run and debug configuration through \`.env\`
+          - corrected backup healthcheck using TCP port 8080
+          - backup healthcheck startup period increased to 150 seconds
+          - pinned Maintenance and Autoheal image tags for reproducible deployments
+          - automated Docker Compose validation in GitHub Actions
+
+          The PDF manual remains unchanged as the general installation guide. Current technical details are maintained in \`README.md\`, \`.env\` and \`docker-compose.yaml\`.
+
+          The additional ZIP download is the clean user package. \`Dockerfile.mc_maintenance\` remains in the repository only as the reproducible build source for the published Maintenance image and is not included in the user package.
+          EOF
+
+      - name: Create GitHub release
+        if: steps.release.outputs.publish == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          gh release create "$TAG" \
+            --target "$GITHUB_SHA" \
+            --title "UGREEN Minecraft Docker Pack ${VERSION}" \
+            --notes-file release-notes.md \
+            --latest \
+            "$ASSET"
+
+      - name: Explain skipped release
+        if: steps.release.outputs.publish != 'true'
+        run: echo "Release ${{ steps.release.outputs.tag }} already exists; nothing was changed."
