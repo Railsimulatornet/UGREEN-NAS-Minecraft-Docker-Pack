@@ -1,0 +1,81 @@
+name: Minecraft Maintenance Image
+
+on:
+  pull_request:
+    paths:
+      - "minecraft_server/Dockerfile.mc_maintenance"
+      - "minecraft_server/MAINTENANCE_IMAGE_VERSION"
+      - ".github/workflows/dockerhub-minecraft-maintenance.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "minecraft_server/Dockerfile.mc_maintenance"
+      - "minecraft_server/MAINTENANCE_IMAGE_VERSION"
+      - ".github/workflows/dockerhub-minecraft-maintenance.yml"
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: railsimulatornet/minecraft-maintenance
+  VERSION_FILE: minecraft_server/MAINTENANCE_IMAGE_VERSION
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Prepare image tags
+        id: image
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="$(tr -d '[:space:]' < "${VERSION_FILE}")"
+
+          if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "${VERSION_FILE} must contain a version in X.Y.Z format." >&2
+            exit 1
+          fi
+
+          minor="${version%.*}"
+
+          {
+            echo "tags<<EOF"
+            echo "${IMAGE_NAME}:${version}"
+            echo "${IMAGE_NAME}:${minor}"
+            echo "${IMAGE_NAME}:latest"
+            echo "EOF"
+            echo "version=${version}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and publish image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./minecraft_server
+          file: ./minecraft_server/Dockerfile.mc_maintenance
+          platforms: linux/amd64,linux/arm64
+          pull: true
+          no-cache: true
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.image.outputs.tags }}
+          labels: org.opencontainers.image.version=${{ steps.image.outputs.version }}
+          provenance: mode=max
+          sbom: true
