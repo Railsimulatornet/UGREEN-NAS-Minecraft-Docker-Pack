@@ -1,0 +1,30 @@
+name: Docker Hub Description
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "minecraft_server/DOCKERHUB_README.md"
+      - ".github/workflows/dockerhub-description.yml"
+  workflow_dispatch:
+
+jobs:
+  update-description:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Update Docker Hub description
+        uses: peter-evans/dockerhub-description@v5
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: railsimulatornet/minecraft-maintenance
+          short-description: Multi-arch maintenance image for the UGREEN Minecraft Docker Pack.
+          readme-filepath: ./minecraft_server/DOCKERHUB_README.md
+          enable-url-completion: true
