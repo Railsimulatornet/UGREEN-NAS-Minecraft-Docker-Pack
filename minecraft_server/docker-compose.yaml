@@ -139,9 +139,7 @@ services:
         max-file: "${LOG_MAX_FILE}"
 
   minecraftserver_maintenance:
-    build:
-      context: .
-      dockerfile: Dockerfile.mc_maintenance
+    image: railsimulatornet/minecraft-maintenance:1.0.0
     container_name: ${MAINTENANCE_CONTAINER_NAME}
     restart: ${MAINTENANCE_RESTART}
     cpus: "${MAINTENANCE_CPUS}"
