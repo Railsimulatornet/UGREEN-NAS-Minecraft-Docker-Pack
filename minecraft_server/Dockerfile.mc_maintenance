@@ -4,6 +4,11 @@ FROM alpine:3.24
 # Maintenance image for the Minecraft Docker Pack
 # Alpine 3.24 receives current patch releases through the minor-version tag.
 # Installed packages are upgraded during each clean rebuild.
+LABEL org.opencontainers.image.title="Minecraft Maintenance"
+LABEL org.opencontainers.image.description="Maintenance tools for the UGREEN Minecraft Docker Pack"
+LABEL org.opencontainers.image.source="https://github.com/Railsimulatornet/UGREEN-NAS-Minecraft-Docker-Pack"
+LABEL org.opencontainers.image.licenses="MIT"
+
 RUN set -eux; \
     apk update; \
     apk upgrade --no-cache; \
