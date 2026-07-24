@@ -122,10 +122,11 @@ services:
       - ./backup/scripts:/backup_scripts_ro:ro
     labels:
       - autoheal=${AUTOHEAL_LABEL_ENABLED}
+      - autoheal.stop.timeout=${AUTOHEAL_DEFAULT_STOP_TIMEOUT}
       - wud.watch=${WUD_WATCH_ENABLED}
       - wud.watch.digest=${WUD_WATCH_DIGEST}
     healthcheck:
-      test: ["CMD-SHELL", "bash /opt/bedrock/healthcheck.sh"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
       start_period: ${BACKUP_HEALTHCHECK_START_PERIOD}
       interval: ${BACKUP_HEALTHCHECK_INTERVAL}
       timeout: ${BACKUP_HEALTHCHECK_TIMEOUT}
@@ -207,10 +208,19 @@ services:
     restart: ${AUTOHEAL_RESTART}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ${AUTOHEAL_STATE_HOST_DIR}:/state
     environment:
+      TZ: "${STACK_TZ}"
+      AUTOHEAL_CONTAINER_LABEL: "${AUTOHEAL_CONTAINER_LABEL}"
+      AUTOHEAL_CONTAINER_LABEL_VALUE: "${AUTOHEAL_CONTAINER_LABEL_VALUE}"
       AUTOHEAL_INTERVAL: "${AUTOHEAL_INTERVAL}"
       AUTOHEAL_START_PERIOD: "${AUTOHEAL_START_PERIOD}"
       AUTOHEAL_DEFAULT_STOP_TIMEOUT: "${AUTOHEAL_DEFAULT_STOP_TIMEOUT}"
+      AUTOHEAL_COOLDOWN: "${AUTOHEAL_COOLDOWN}"
+      AUTOHEAL_MAX_RESTARTS: "${AUTOHEAL_MAX_RESTARTS}"
+      AUTOHEAL_RESTART_WINDOW: "${AUTOHEAL_RESTART_WINDOW}"
+      AUTOHEAL_DRY_RUN: "${AUTOHEAL_DRY_RUN}"
+      AUTOHEAL_LOG_LEVEL: "${AUTOHEAL_LOG_LEVEL}"
     security_opt: ["no-new-privileges:true"]
     labels:
       - wud.watch=${WUD_WATCH_ENABLED}
