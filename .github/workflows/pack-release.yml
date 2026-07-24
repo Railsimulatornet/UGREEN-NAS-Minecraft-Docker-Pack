@@ -1,6 +1,12 @@
 name: Docker Pack Release
 
 on:
+  pull_request:
+    paths:
+      - PACK_VERSION
+      - .github/workflows/pack-release.yml
+      - README.md
+      - minecraft_server/**
   push:
     branches:
       - main
@@ -13,7 +19,59 @@ permissions:
   contents: write
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Validate version and clean package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="$(tr -d '[:space:]' < PACK_VERSION)"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "PACK_VERSION must contain a version in X.Y.Z format." >&2
+            exit 1
+          fi
+
+          bundle="UGREEN_Minecraft_Docker_Pack_v${version}"
+          asset="${bundle}.zip"
+
+          mkdir -p "dist/${bundle}"
+          cp -a README.md LICENSE minecraft_server "dist/${bundle}/"
+
+          rm -f "dist/${bundle}/minecraft_server/Dockerfile.mc_maintenance"
+          rm -f "dist/${bundle}/minecraft_server/MAINTENANCE_IMAGE_VERSION"
+
+          shopt -s nullglob
+          for file in *.pdf; do
+            cp -a "$file" "dist/${bundle}/"
+          done
+          shopt -u nullglob
+
+          if [[ -d assets ]]; then
+            cp -a assets "dist/${bundle}/"
+          fi
+
+          (
+            cd dist
+            zip -r "$asset" "$bundle"
+          )
+
+          test -s "dist/${asset}"
+          unzip -t "dist/${asset}"
+
+          if unzip -l "dist/${asset}" | grep -Fq 'Dockerfile.mc_maintenance'; then
+            echo "The user package unexpectedly contains Dockerfile.mc_maintenance." >&2
+            exit 1
+          fi
+
   release:
+    if: github.event_name != 'pull_request'
+    needs: validate
     runs-on: ubuntu-latest
 
     steps:
@@ -29,11 +87,6 @@ jobs:
           set -euo pipefail
 
           version="$(tr -d '[:space:]' < PACK_VERSION)"
-          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "PACK_VERSION must contain a version in X.Y.Z format." >&2
-            exit 1
-          fi
-
           tag="v${version}"
           publish=true
 
@@ -57,8 +110,7 @@ jobs:
           asset="${bundle}.zip"
 
           mkdir -p "dist/${bundle}"
-          cp -a README.md "dist/${bundle}/"
-          cp -a minecraft_server "dist/${bundle}/"
+          cp -a README.md LICENSE minecraft_server "dist/${bundle}/"
 
           # The repository keeps the Dockerfile as the reproducible source for
           # railsimulatornet/minecraft-maintenance. The ready-to-use user bundle
@@ -67,7 +119,7 @@ jobs:
           rm -f "dist/${bundle}/minecraft_server/MAINTENANCE_IMAGE_VERSION"
 
           shopt -s nullglob
-          for file in LICENSE LICENSE.* COPYING COPYING.* *.pdf; do
+          for file in *.pdf; do
             cp -a "$file" "dist/${bundle}/"
           done
           shopt -u nullglob
