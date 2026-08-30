@@ -35,7 +35,7 @@ jobs:
             -f minecraft_server/docker-compose.yaml \
             config --quiet
 
-      - name: Verify pinned Autoheal integration
+      - name: Verify pinned maintenance and Autoheal integration
         shell: bash
         run: |
           set -euo pipefail
@@ -47,6 +47,7 @@ jobs:
               config
           )"
 
+          grep -Fq 'image: railsimulatornet/minecraft-maintenance:1.0.1' <<<"$resolved"
           grep -Fq 'image: railsimulatornet/autoheal:1.0.0' <<<"$resolved"
           grep -Fq 'target: /state' <<<"$resolved"
           grep -Fq 'AUTOHEAL_COOLDOWN: "300"' <<<"$resolved"
