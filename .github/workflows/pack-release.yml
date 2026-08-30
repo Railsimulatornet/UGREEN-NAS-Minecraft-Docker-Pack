@@ -37,6 +37,9 @@ jobs:
             exit 1
           fi
 
+          grep -Fq 'image: railsimulatornet/minecraft-maintenance:1.0.1' minecraft_server/docker-compose.yaml
+          grep -Fq 'AUTOHEAL_IMAGE=railsimulatornet/autoheal:1.0.0' minecraft_server/.env
+
           bundle="UGREEN_Minecraft_Docker_Pack_v${version}"
           asset="${bundle}.zip"
 
@@ -149,14 +152,18 @@ jobs:
 
           ### Änderungen
 
-          - eigener stabiler Autoheal-Release \`railsimulatornet/autoheal:1.0.0\`
-          - Cooldown und persistentes Neustartlimit gegen Endlosschleifen
-          - persistente Autoheal-Historie unter \`./autoheal-state\`
-          - Dry-Run- und Debug-Konfiguration über die \`.env\`
-          - korrigierter Backup-Healthcheck über TCP-Port 8080
-          - Backup-Healthcheck-Startphase auf 150 Sekunden erhöht
-          - feste Maintenance- und Autoheal-Image-Tags für reproduzierbare Installationen
-          - automatische Compose-Validierung in GitHub Actions
+          - Maintenance-Image auf \`railsimulatornet/minecraft-maintenance:1.0.1\` aktualisiert
+          - Maintenance-Image mit aktuellen Alpine-3.24-Paketupdates neu gebaut
+          - neuer Trivy-Sicherheitscheck vor der Veröffentlichung des Maintenance-Images
+          - der veröffentlichte 1.0.1-Build hat den Security-Check ohne behebbare HIGH- oder CRITICAL-Funde bestanden
+          - Multi-Arch-Unterstützung für \`linux/amd64\` und \`linux/arm64\` bleibt erhalten
+          - SBOM und Build-Provenance bleiben für das Maintenance-Image aktiviert
+          - Compose-Validierung prüft nun zusätzlich den festen Maintenance-Tag 1.0.1
+          - Autoheal bleibt unverändert auf dem festen Tag \`railsimulatornet/autoheal:1.0.0\`
+
+          Die eigentliche Minecraft-, Backup-, Watchdog- und Addon-Funktion wurde durch dieses Wartungs- und Sicherheitsupdate nicht verändert.
+
+          Für vorhandene Installationen genügt es, die neue \`docker-compose.yaml\` zu übernehmen und die Images anschließend über Docker Compose neu zu ziehen und bereitzustellen. Die eigene produktive \`.env\` sollte nicht vollständig überschrieben werden.
 
           Das PDF-Handbuch bleibt als grundlegende Installationsanleitung unverändert. Aktuelle technische Details stehen in \`README.md\`, \`.env\` und \`docker-compose.yaml\`.
 
@@ -168,14 +175,18 @@ jobs:
 
           ### Changes
 
-          - stable custom Autoheal image \`railsimulatornet/autoheal:1.0.0\`
-          - cooldown and persistent restart limits against endless loops
-          - persistent Autoheal history under \`./autoheal-state\`
-          - dry-run and debug configuration through \`.env\`
-          - corrected backup healthcheck using TCP port 8080
-          - backup healthcheck startup period increased to 150 seconds
-          - pinned Maintenance and Autoheal image tags for reproducible deployments
-          - automated Docker Compose validation in GitHub Actions
+          - maintenance image updated to \`railsimulatornet/minecraft-maintenance:1.0.1\`
+          - maintenance image rebuilt with current Alpine 3.24 package updates
+          - new Trivy security gate before publishing the maintenance image
+          - the published 1.0.1 build passed the security gate with no fixable HIGH or CRITICAL findings
+          - multi-architecture support for \`linux/amd64\` and \`linux/arm64\` remains available
+          - SBOM and build provenance remain enabled for the maintenance image
+          - Compose validation now also verifies the pinned maintenance tag 1.0.1
+          - Autoheal remains unchanged on the pinned tag \`railsimulatornet/autoheal:1.0.0\`
+
+          The actual Minecraft, backup, watchdog and addon functionality is unchanged by this maintenance and security update.
+
+          Existing installations only need the new \`docker-compose.yaml\`, followed by pulling and redeploying the images through Docker Compose. Do not completely overwrite a customized production \`.env\`.
 
           The PDF manual remains unchanged as the general installation guide. Current technical details are maintained in \`README.md\`, \`.env\` and \`docker-compose.yaml\`.
 
