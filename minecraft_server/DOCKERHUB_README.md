@@ -15,12 +15,13 @@ Das Image stellt die Wartungsumgebung für das UGREEN Minecraft Docker Pack bere
 - Cron und Werkzeuge für Watchdog, Backups und Addon-Aktualisierungen
 - Multi-Arch-Unterstützung für `linux/amd64` und `linux/arm64`
 - SBOM- und Provenance-Attestierungen bei der Veröffentlichung
+- Security-Gate mit Trivy vor der Veröffentlichung neuer Images
 
 ### Empfohlene Verwendung
 
 ```yaml
 minecraftserver_maintenance:
-  image: railsimulatornet/minecraft-maintenance:1.0.0
+  image: railsimulatornet/minecraft-maintenance:1.0.1
 ```
 
 Die vollständige Compose-Konfiguration, Skripte und Installationsanleitung befinden sich im GitHub-Projekt:
@@ -38,12 +39,13 @@ This image provides the maintenance environment for the UGREEN Minecraft Docker 
 - Cron and utilities for watchdog checks, backups and addon updates
 - Multi-architecture support for `linux/amd64` and `linux/arm64`
 - SBOM and provenance attestations on published images
+- Trivy security gate before publishing new images
 
 ### Recommended usage
 
 ```yaml
 minecraftserver_maintenance:
-  image: railsimulatornet/minecraft-maintenance:1.0.0
+  image: railsimulatornet/minecraft-maintenance:1.0.1
 ```
 
 The complete Compose configuration, scripts and installation guide are available in the GitHub project:
@@ -52,7 +54,7 @@ The complete Compose configuration, scripts and installation guide are available
 
 ## Image tags
 
-- `1.0.0` – fixed release
+- `1.0.1` – current fixed release
 - `1.0` – newest patch release in the 1.0 series
 - `latest` – current stable release
 
