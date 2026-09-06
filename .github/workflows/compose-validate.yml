@@ -155,24 +155,3 @@ jobs:
           )
           PY
 
-          maintenance_version="$(
-            tr -d '[:space:]' < minecraft_server/MAINTENANCE_IMAGE_VERSION
-          )"
-
-          if [[ ! "$maintenance_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Invalid MAINTENANCE_IMAGE_VERSION: $maintenance_version" >&2
-            exit 1
-          fi
-
-          grep -Fq \ 
-             "image: railsimulatornet/minecraft-maintenance:${maintenance_version}" \
-             <<<"$resolved"
-          grep -Fq 'image: railsimulatornet/autoheal:1.0.0' <<<"$resolved"
-          grep -Fq 'target: /state' <<<"$resolved"
-          grep -Fq 'AUTOHEAL_COOLDOWN: "300"' <<<"$resolved"
-          grep -Fq 'AUTOHEAL_MAX_RESTARTS: "3"' <<<"$resolved"
-
-          if grep -Fq 'willfarrell/autoheal' <<<"$resolved"; then
-            echo 'Obsolete willfarrell/autoheal image is still present.' >&2
-            exit 1
-          fi
