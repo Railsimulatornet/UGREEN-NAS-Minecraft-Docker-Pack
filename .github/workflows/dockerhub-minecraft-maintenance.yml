@@ -74,7 +74,33 @@ jobs:
           tags: local/minecraft-maintenance:security
           provenance: false
           sbom: false
+          
+      - name: Show security relevant package versions
+        shell: bash
+        run: |
+          set -euo pipefail
 
+          echo "============================================================"
+          echo " Minecraft Maintenance - installed security package versions"
+          echo "============================================================"
+
+          docker run --rm \
+            --entrypoint /bin/sh \
+            local/minecraft-maintenance:security \
+            -ec '
+              echo
+              echo "=== Alpine ==="
+              cat /etc/alpine-release
+
+              echo
+              echo "=== Installed package versions ==="
+              apk info -v | grep -E "^(jq|rsync|util-linux)-" || true
+
+              echo
+              echo "=== Repository policy ==="
+              apk policy jq rsync util-linux
+            '
+            
       - name: Security gate with Trivy
         shell: bash
         run: |
