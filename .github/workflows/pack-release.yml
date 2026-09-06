@@ -156,6 +156,9 @@ jobs:
         env:
           VERSION: ${{ steps.release.outputs.version }}
         run: |
+          maintenance_version="$(
+            tr -d '[:space:]' < minecraft_server/MAINTENANCE_IMAGE_VERSION
+          )"
           cat > release-notes.md <<EOF
           ## Deutsch
 
@@ -163,14 +166,13 @@ jobs:
 
           ### Änderungen
 
-          - Maintenance-Image auf \`railsimulatornet/minecraft-maintenance:1.0.1\` aktualisiert
+          - Maintenance-Image auf `railsimulatornet/minecraft-maintenance:${maintenance_version}` aktualisiert
           - Maintenance-Image mit aktuellen Alpine-3.24-Paketupdates neu gebaut
-          - neuer Trivy-Sicherheitscheck vor der Veröffentlichung des Maintenance-Images
-          - der veröffentlichte 1.0.1-Build hat den Security-Check ohne behebbare HIGH- oder CRITICAL-Funde bestanden
-          - Multi-Arch-Unterstützung für \`linux/amd64\` und \`linux/arm64\` bleibt erhalten
+          - Trivy-Sicherheitscheck vor der Veröffentlichung des Maintenance-Images
+          - der veröffentlichte ${maintenance_version}-Build hat den Security-Check ohne behebbare HIGH- oder CRITICAL-Funde bestanden
+          - Multi-Arch-Unterstützung für `linux/amd64` und `linux/arm64` bleibt erhalten
           - SBOM und Build-Provenance bleiben für das Maintenance-Image aktiviert
-          - Compose-Validierung prüft nun zusätzlich den festen Maintenance-Tag 1.0.1
-          - Autoheal bleibt unverändert auf dem festen Tag \`railsimulatornet/autoheal:1.0.0\`
+          - Compose-Validierung prüft den über MAINTENANCE_IMAGE_VERSION festgelegten Maintenance-Tag
 
           Die eigentliche Minecraft-, Backup-, Watchdog- und Addon-Funktion wurde durch dieses Wartungs- und Sicherheitsupdate nicht verändert.
 
@@ -186,14 +188,13 @@ jobs:
 
           ### Changes
 
-          - maintenance image updated to \`railsimulatornet/minecraft-maintenance:1.0.1\`
+          - maintenance image updated to `railsimulatornet/minecraft-maintenance:${maintenance_version}`
           - maintenance image rebuilt with current Alpine 3.24 package updates
-          - new Trivy security gate before publishing the maintenance image
-          - the published 1.0.1 build passed the security gate with no fixable HIGH or CRITICAL findings
-          - multi-architecture support for \`linux/amd64\` and \`linux/arm64\` remains available
+          - Trivy security gate before publishing the maintenance image
+          - the published ${maintenance_version} build passed the security gate with no fixable HIGH or CRITICAL findings
+          - multi-architecture support for `linux/amd64` and `linux/arm64` remains available
           - SBOM and build provenance remain enabled for the maintenance image
-          - Compose validation now also verifies the pinned maintenance tag 1.0.1
-          - Autoheal remains unchanged on the pinned tag \`railsimulatornet/autoheal:1.0.0\`
+          - Compose validation verifies the maintenance tag defined by MAINTENANCE_IMAGE_VERSION
 
           The actual Minecraft, backup, watchdog and addon functionality is unchanged by this maintenance and security update.
 
