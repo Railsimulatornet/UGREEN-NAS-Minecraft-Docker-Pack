@@ -67,7 +67,7 @@ Der Backup-Healthcheck prüft den internen Dienst auf TCP-Port 8080 und verwende
 
 ### Aktualisierung einer vorhandenen Installation
 
-Die eigene produktive `.env` nicht vollständig überschreiben. Stattdessen mindestens die neuen beziehungsweise geänderten `AUTOHEAL_*`-Werte aus der Repository-Datei übernehmen und anschließend die neue `docker-compose.yaml` verwenden. Für eine reproduzierbare Installation sollten die festen Image-Tags `railsimulatornet/minecraft-maintenance:1.0.1` und `railsimulatornet/autoheal:1.0.0` beibehalten werden.
+Die eigene produktive `.env` nicht vollständig überschreiben. Stattdessen mindestens die neuen beziehungsweise geänderten `AUTOHEAL_*`-Werte aus der Repository-Datei übernehmen und anschließend die neue `docker-compose.yaml` verwenden. Für eine reproduzierbare Installation sollten die festen Image-Tags `railsimulatornet/minecraft-maintenance:1.0.2` und `railsimulatornet/autoheal:1.0.0` beibehalten werden.
 
 ### Sicherheitshinweis
 
@@ -96,7 +96,7 @@ Community project for **UGREEN NAS / UGOS** with one or two **Minecraft Bedrock*
 - optional creative and survival server profiles
 - backup container with configurable targets and intervals
 - maintenance scripts for notifications, watchdog checks and addon updates
-- `railsimulatornet/minecraft-maintenance:1.0.1` as the pinned multi-architecture maintenance image
+- `railsimulatornet/minecraft-maintenance:1.0.2` as the pinned multi-architecture maintenance image
 - `railsimulatornet/autoheal:1.0.0` with cooldown and restart-loop protection
 - persistent Autoheal restart history in the local `autoheal-state/` directory
 - relative project paths for UGOS-friendly deployment
@@ -131,7 +131,7 @@ minecraft_server/
 
 ### Maintenance 1.0.2
 
-The Docker Pack uses the pinned tag `railsimulatornet/minecraft-maintenance:1.0.1`. The image is published for `linux/amd64` and `linux/arm64`. Before publication, a fresh build is checked with Trivy for fixable HIGH and CRITICAL security findings. Published images also include SBOM and provenance attestations.
+The Docker Pack uses the pinned tag `railsimulatornet/minecraft-maintenance:1.0.2`. The image is published for `linux/amd64` and `linux/arm64`. Before publication, a fresh build is checked with Trivy for fixable HIGH and CRITICAL security findings. Published images also include SBOM and provenance attestations.
 
 ### Autoheal 1.0.0
 
@@ -150,7 +150,7 @@ The backup healthcheck tests the internal service on TCP port 8080 and uses a 15
 
 ### Updating an existing installation
 
-Do not completely overwrite your customized production `.env`. Instead, copy at least the new or changed `AUTOHEAL_*` values from the repository file and then use the new `docker-compose.yaml`. For reproducible deployments, keep the pinned image tags `railsimulatornet/minecraft-maintenance:1.0.1` and `railsimulatornet/autoheal:1.0.0`.
+Do not completely overwrite your customized production `.env`. Instead, copy at least the new or changed `AUTOHEAL_*` values from the repository file and then use the new `docker-compose.yaml`. For reproducible deployments, keep the pinned image tags `railsimulatornet/minecraft-maintenance:1.0.2` and `railsimulatornet/autoheal:1.0.0`.
 
 ### Security notice
 
