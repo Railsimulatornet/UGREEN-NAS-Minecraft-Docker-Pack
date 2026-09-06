@@ -166,11 +166,11 @@ jobs:
 
           ### Änderungen
 
-          - Maintenance-Image auf `railsimulatornet/minecraft-maintenance:${maintenance_version}` aktualisiert
+          - Maintenance-Image auf \`railsimulatornet/minecraft-maintenance:${maintenance_version}\` aktualisiert
           - Maintenance-Image mit aktuellen Alpine-3.24-Paketupdates neu gebaut
           - Trivy-Sicherheitscheck vor der Veröffentlichung des Maintenance-Images
           - der veröffentlichte ${maintenance_version}-Build hat den Security-Check ohne behebbare HIGH- oder CRITICAL-Funde bestanden
-          - Multi-Arch-Unterstützung für `linux/amd64` und `linux/arm64` bleibt erhalten
+          - Multi-Arch-Unterstützung für \`linux/amd64\` und \`linux/arm64\` bleibt erhalten
           - SBOM und Build-Provenance bleiben für das Maintenance-Image aktiviert
           - Compose-Validierung prüft den über MAINTENANCE_IMAGE_VERSION festgelegten Maintenance-Tag
 
@@ -188,11 +188,11 @@ jobs:
 
           ### Changes
 
-          - maintenance image updated to `railsimulatornet/minecraft-maintenance:${maintenance_version}`
+          - maintenance image updated to \`railsimulatornet/minecraft-maintenance:${maintenance_version}\`
           - maintenance image rebuilt with current Alpine 3.24 package updates
           - Trivy security gate before publishing the maintenance image
           - the published ${maintenance_version} build passed the security gate with no fixable HIGH or CRITICAL findings
-          - multi-architecture support for `linux/amd64` and `linux/arm64` remains available
+          - multi-architecture support for \`linux/amd64\` and \`linux/arm64\` remains available
           - SBOM and build provenance remain enabled for the maintenance image
           - Compose validation verifies the maintenance tag defined by MAINTENANCE_IMAGE_VERSION
 
