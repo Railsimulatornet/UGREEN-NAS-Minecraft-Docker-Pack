@@ -36,18 +36,124 @@ jobs:
             --env-file minecraft_server/.env \
             -f minecraft_server/docker-compose.yaml \
             config --quiet
-
       - name: Verify pinned maintenance and Autoheal integration
         shell: bash
         run: |
           set -euo pipefail
 
-          resolved="$(
-            docker compose \
-              --env-file minecraft_server/.env \
-              -f minecraft_server/docker-compose.yaml \
-              config
+          maintenance_version="$(
+            tr -d '[:space:]' < minecraft_server/MAINTENANCE_IMAGE_VERSION
           )"
+
+          if [[ ! "$maintenance_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "ERROR: Invalid MAINTENANCE_IMAGE_VERSION: $maintenance_version" >&2
+            exit 1
+          fi
+
+          config_json="$(mktemp)"
+          trap 'rm -f "$config_json"' EXIT
+
+          docker compose \
+            --env-file minecraft_server/.env \
+            -f minecraft_server/docker-compose.yaml \
+            config --format json > "$config_json"
+
+          python3 - "$config_json" "$maintenance_version" <<'PY'
+          import json
+          import sys
+
+          config_path = sys.argv[1]
+          maintenance_version = sys.argv[2]
+
+          with open(config_path, "r", encoding="utf-8") as f:
+              config = json.load(f)
+
+          services = config.get("services", {})
+
+          def fail(message):
+              print(f"ERROR: {message}", file=sys.stderr)
+              raise SystemExit(1)
+
+          maintenance = services.get("minecraftserver_maintenance")
+          if not maintenance:
+              fail("minecraftserver_maintenance service is missing")
+
+          expected_maintenance_image = (
+              f"railsimulatornet/minecraft-maintenance:{maintenance_version}"
+          )
+
+          actual_maintenance_image = maintenance.get("image")
+
+          if actual_maintenance_image != expected_maintenance_image:
+              fail(
+                  "Maintenance image mismatch: "
+                  f"expected {expected_maintenance_image}, "
+                  f"got {actual_maintenance_image}"
+              )
+
+          autoheal = services.get("minecraftserver_autoheal")
+          if not autoheal:
+              fail("minecraftserver_autoheal service is missing")
+
+          expected_autoheal_image = "railsimulatornet/autoheal:1.0.0"
+          actual_autoheal_image = autoheal.get("image")
+
+          if actual_autoheal_image != expected_autoheal_image:
+              fail(
+                  "Autoheal image mismatch: "
+                  f"expected {expected_autoheal_image}, "
+                  f"got {actual_autoheal_image}"
+              )
+
+          volumes = autoheal.get("volumes") or []
+          volume_targets = []
+
+          for volume in volumes:
+              if isinstance(volume, dict):
+                  target = volume.get("target")
+                  if target:
+                      volume_targets.append(target)
+
+          if "/state" not in volume_targets:
+              fail(
+                  "Autoheal persistent /state volume is missing. "
+                  f"Found targets: {volume_targets}"
+              )
+
+          environment = autoheal.get("environment") or {}
+
+          expected_environment = {
+              "AUTOHEAL_COOLDOWN": "300",
+              "AUTOHEAL_MAX_RESTARTS": "3",
+          }
+
+          for key, expected in expected_environment.items():
+              actual = environment.get(key)
+
+              if str(actual) != expected:
+                  fail(
+                      f"{key} mismatch: expected {expected}, got {actual}"
+                  )
+
+          for service_name, service in services.items():
+              image = str(service.get("image") or "")
+
+              if image.startswith("willfarrell/autoheal"):
+                  fail(
+                      "Obsolete willfarrell/autoheal image is still present "
+                      f"in service {service_name}: {image}"
+                  )
+
+          print("Compose integration verification passed.")
+          print(f"Maintenance image : {actual_maintenance_image}")
+          print(f"Autoheal image    : {actual_autoheal_image}")
+          print("Autoheal state    : /state")
+          print(
+              "Autoheal limits   : "
+              f"cooldown={environment.get('AUTOHEAL_COOLDOWN')}, "
+              f"max_restarts={environment.get('AUTOHEAL_MAX_RESTARTS')}"
+          )
+          PY
 
           maintenance_version="$(
             tr -d '[:space:]' < minecraft_server/MAINTENANCE_IMAGE_VERSION
