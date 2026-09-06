@@ -37,7 +37,18 @@ jobs:
             exit 1
           fi
 
-          grep -Fq 'image: railsimulatornet/minecraft-maintenance:1.0.1' minecraft_server/docker-compose.yaml
+          maintenance_version="$(
+            tr -d '[:space:]' < minecraft_server/MAINTENANCE_IMAGE_VERSION
+          )"
+
+          if [[ ! "$maintenance_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid MAINTENANCE_IMAGE_VERSION: $maintenance_version" >&2
+            exit 1
+          fi
+
+          grep -Fq \
+            "image: railsimulatornet/minecraft-maintenance:${maintenance_version}" \
+            minecraft_server/docker-compose.yaml
           grep -Fq 'AUTOHEAL_IMAGE=railsimulatornet/autoheal:1.0.0' minecraft_server/.env
 
           bundle="UGREEN_Minecraft_Docker_Pack_v${version}"
