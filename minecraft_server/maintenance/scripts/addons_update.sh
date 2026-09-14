@@ -426,7 +426,20 @@ process_repo_for_world() {
     cp -a "$d" "$tmpdir/." 2>/dev/null || true
   done
 
-  # 3) Bekannte Add-on-Kompatibilitaetsfixes nur im temporaeren Staging anwenden\n  if [[ -f /scripts/addon_compat.py ]]; then\n    python3 /scripts/addon_compat.py "$tmpdir" || {\n      echo "$WARN_PREFIX Add-on-Kompatibilitaetspatcher fehlgeschlagen; verwende unveraendertes Staging."\n    }\n  elif [[ -f "$SCRIPT_DIR/addon_compat.py" ]]; then\n    python3 "$SCRIPT_DIR/addon_compat.py" "$tmpdir" || {\n      echo "$WARN_PREFIX Add-on-Kompatibilitaetspatcher fehlgeschlagen; verwende unveraendertes Staging."\n    }\n  fi\n\n  # 4) Alle Packs einsammeln und in Ziel kopieren\n  collect_packs "$tmpdir" "both"\n  for uuid_meta in "${!found_b[@]}"; do
+  # 3) Bekannte Add-on-Kompatibilitaetsfixes nur im temporaeren Staging anwenden
+  if [[ -f /scripts/addon_compat.py ]]; then
+    python3 /scripts/addon_compat.py "$tmpdir" || {
+      echo "$WARN_PREFIX Add-on-Kompatibilitaetspatcher fehlgeschlagen; verwende unveraendertes Staging."
+    }
+  elif [[ -f "$SCRIPT_DIR/addon_compat.py" ]]; then
+    python3 "$SCRIPT_DIR/addon_compat.py" "$tmpdir" || {
+      echo "$WARN_PREFIX Add-on-Kompatibilitaetspatcher fehlgeschlagen; verwende unveraendertes Staging."
+    }
+  fi
+
+  # 4) Alle Packs einsammeln und in Ziel kopieren
+  collect_packs "$tmpdir" "both"
+  for uuid_meta in "${!found_b[@]}"; do
     IFS=':' read -r vA vB vC dirpath name <<< "${found_b[$uuid_meta]}"
     copy_pack "$dirpath" "$world_root" "behavior" "$uuid_meta"
     json_upsert_raw "$(world_bp_json "$world_root" "$world_name")" "$uuid_meta" "$vA" "$vB" "$vC"
