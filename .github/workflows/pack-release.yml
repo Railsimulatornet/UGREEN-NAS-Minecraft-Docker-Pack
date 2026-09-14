@@ -166,17 +166,19 @@ jobs:
 
           ### Änderungen
 
-          - Maintenance-Image auf \`railsimulatornet/minecraft-maintenance:${maintenance_version}\` aktualisiert
-          - Maintenance-Image mit aktuellen Alpine-3.24-Paketupdates neu gebaut
-          - Trivy-Sicherheitscheck vor der Veröffentlichung des Maintenance-Images
-          - der veröffentlichte ${maintenance_version}-Build hat den Security-Check ohne behebbare HIGH- oder CRITICAL-Funde bestanden
-          - Multi-Arch-Unterstützung für \`linux/amd64\` und \`linux/arm64\` bleibt erhalten
-          - SBOM und Build-Provenance bleiben für das Maintenance-Image aktiviert
-          - Compose-Validierung prüft den über MAINTENANCE_IMAGE_VERSION festgelegten Maintenance-Tag
+          - neuer automatischer Bedrock-1.26-Kompatibilitätspatcher für Add-ons während der Installation
+          - Backpacks-Fix: inkompatible Laufzeit-Imports aus \`@minecraft/server\` werden im temporären Staging bereinigt; dadurch wird unter anderem der Fehler um \`BlockComponentBlockBreakEvent\` behoben
+          - Faramir's Furniture: gemischte \`render_method\`-Definitionen werden für aktuelle Bedrock-Versionen normalisiert
+          - eingebettete VCS-Metadaten wie \`.git\` werden vor der Installation aus dem temporären Staging entfernt
+          - Shell-Syntaxfehler im Add-on-Updater behoben
+          - der Add-on-Updater überspringt bei fehlender \`lib_stack.sh\` nicht mehr still alle Welten, sondern verwendet integrierte Profil-Fallbacks
+          - \`MC_SERVER_PROFILES\` wird explizit an den Maintenance-Container übergeben
+          - Maintenance-Image bleibt unverändert auf \`railsimulatornet/minecraft-maintenance:${maintenance_version}\`
+          - Autoheal bleibt unverändert auf \`railsimulatornet/autoheal:1.0.0\`
 
-          Die eigentliche Minecraft-, Backup-, Watchdog- und Addon-Funktion wurde durch dieses Wartungs- und Sicherheitsupdate nicht verändert.
+          Die Änderungen wurden mit Bedrock Dedicated Server 1.26.45.1 und dem aktuellen Survival-Add-on-Set getestet.
 
-          Für vorhandene Installationen genügt es, die neue \`docker-compose.yaml\` zu übernehmen und die Images anschließend über Docker Compose neu zu ziehen und bereitzustellen. Die eigene produktive \`.env\` sollte nicht vollständig überschrieben werden.
+          Für vorhandene Installationen sollte die eigene produktive \`.env\` nicht vollständig überschrieben werden. Änderungen an \`docker-compose.yaml\` und den Maintenance-Skripten gezielt übernehmen.
 
           Das PDF-Handbuch bleibt als grundlegende Installationsanleitung unverändert. Aktuelle technische Details stehen in \`README.md\`, \`.env\` und \`docker-compose.yaml\`.
 
@@ -188,17 +190,19 @@ jobs:
 
           ### Changes
 
-          - maintenance image updated to \`railsimulatornet/minecraft-maintenance:${maintenance_version}\`
-          - maintenance image rebuilt with current Alpine 3.24 package updates
-          - Trivy security gate before publishing the maintenance image
-          - the published ${maintenance_version} build passed the security gate with no fixable HIGH or CRITICAL findings
-          - multi-architecture support for \`linux/amd64\` and \`linux/arm64\` remains available
-          - SBOM and build provenance remain enabled for the maintenance image
-          - Compose validation verifies the maintenance tag defined by MAINTENANCE_IMAGE_VERSION
+          - new automatic Bedrock 1.26 add-on compatibility patcher during installation
+          - Backpacks fix: incompatible runtime imports from \`@minecraft/server\` are cleaned in temporary staging, including the \`BlockComponentBlockBreakEvent\` compatibility failure
+          - Faramir's Furniture: mixed \`render_method\` definitions are normalized for current Bedrock versions
+          - embedded VCS metadata such as \`.git\` is removed from temporary staging before deployment
+          - fixed the shell syntax error in the add-on updater
+          - if \`lib_stack.sh\` is missing, the add-on updater no longer silently skips all worlds and instead uses built-in profile fallbacks
+          - \`MC_SERVER_PROFILES\` is passed explicitly to the Maintenance container
+          - Maintenance image remains unchanged at \`railsimulatornet/minecraft-maintenance:${maintenance_version}\`
+          - Autoheal remains unchanged at \`railsimulatornet/autoheal:1.0.0\`
 
-          The actual Minecraft, backup, watchdog and addon functionality is unchanged by this maintenance and security update.
+          The changes were tested with Bedrock Dedicated Server 1.26.45.1 and the current Survival add-on set.
 
-          Existing installations only need the new \`docker-compose.yaml\`, followed by pulling and redeploying the images through Docker Compose. Do not completely overwrite a customized production \`.env\`.
+          Existing customized production \`.env\` files should not be overwritten completely. Apply changes to \`docker-compose.yaml\` and the Maintenance scripts selectively.
 
           The PDF manual remains unchanged as the general installation guide. Current technical details are maintained in \`README.md\`, \`.env\` and \`docker-compose.yaml\`.
 
