@@ -14,6 +14,35 @@ SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 [ -f /scripts/lib_notify.sh ] && . /scripts/lib_notify.sh || [ -f "$SCRIPT_DIR/lib_notify.sh" ] && . "$SCRIPT_DIR/lib_notify.sh"
 [ -f /scripts/lib_stack.sh ] && . /scripts/lib_stack.sh || [ -f "$SCRIPT_DIR/lib_stack.sh" ] && . "$SCRIPT_DIR/lib_stack.sh"
 
+# Fallback: older/partial NAS deployments may not contain lib_stack.sh.
+# Never silently skip all worlds; derive profile helpers locally instead.
+if ! command -v survival_enabled >/dev/null 2>&1 || ! command -v creative_enabled >/dev/null 2>&1; then
+  ADDON_SERVER_PROFILES="${MC_SERVER_PROFILES:-${COMPOSE_PROFILES:-creative,survival}}"
+  ADDON_SERVER_PROFILES="$(printf '%s' "$ADDON_SERVER_PROFILES" | tr '[:upper:]' '[:lower:]' | tr -d ' ')"
+
+  addon_profile_enabled() {
+    local name
+    name="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+    case ",${ADDON_SERVER_PROFILES}," in
+      *,"${name}",*) return 0 ;;
+      *) return 1 ;;
+    esac
+  }
+
+  creative_enabled() { addon_profile_enabled creative; }
+  survival_enabled() { addon_profile_enabled survival; }
+  creative_container_name() { printf '%s\n' "${CREATIVE_CONTAINER_NAME:-minecraftserver_creative}"; }
+  survival_container_name() { printf '%s\n' "${SURVIVAL_CONTAINER_NAME:-minecraftserver_survival}"; }
+  enabled_mc_containers() {
+    local out=""
+    creative_enabled && out="$(creative_container_name)" || true
+    survival_enabled && out="${out}${out:+ }$(survival_container_name)" || true
+    printf '%s\n' "$out"
+  }
+
+  echo "[warn ] lib_stack.sh fehlt; verwende integrierte Profil-Fallbacks: ${ADDON_SERVER_PROFILES}" >&2
+fi
+
 # --- TESTSCHALTER: nur Restart-Zeile ausgeben und beenden ---
 if [ "${TEST_RESTART_LINE:-0}" = "1" ]; then
   : "${MC_CONTAINERS:=}"
