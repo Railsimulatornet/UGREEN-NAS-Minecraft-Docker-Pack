@@ -17,8 +17,28 @@ BACKUP_DIR="${BACKUP_DIR:-/backup}"
 HOST_NAME="${HOST_NAME:-Ugreen NAS}"
 DISPLAY_LIMIT="${DISPLAY_LIMIT:-200}"
 TZ="${TZ:-Europe/Berlin}"
-: "${CREATIVE_WORLD:=${CREATIVE_LEVEL_NAME:-creative}}"
-: "${SURVIVAL_WORLD:=${SURVIVAL_LEVEL_NAME:-Glosis}}"
+CREATIVE_LEVEL="${CREATIVE_LEVEL_NAME:-creative}"
+SURVIVAL_LEVEL="${SURVIVAL_LEVEL_NAME:-Glosis}"
+
+read_world_display_name() {
+  world_root="$1"
+  level_name="$2"
+  fallback="$3"
+  levelname_file="${world_root}/worlds/${level_name}/levelname.txt"
+
+  if [ -f "$levelname_file" ]; then
+    display_name="$(tr -d '\r\n' < "$levelname_file" 2>/dev/null || true)"
+    if [ -n "$display_name" ]; then
+      printf '%s\n' "$display_name"
+      return 0
+    fi
+  fi
+
+  printf '%s\n' "$fallback"
+}
+
+CREATIVE_WORLD="$(read_world_display_name /creative "$CREATIVE_LEVEL" "$CREATIVE_LEVEL")"
+SURVIVAL_WORLD="$(read_world_display_name /survival "$SURVIVAL_LEVEL" "$SURVIVAL_LEVEL")"
 
 parse_date() {
   if [ -n "${NOTIFY_DATE:-}" ]; then
@@ -101,23 +121,37 @@ else
   NO_ACTIVE_MSG='No active backup targets configured.'
 fi
 
-FILES=$(ls -1 "${BACKUP_DIR}"/*.${YDAY}-*.mcworld 2>/dev/null || true)
-
 COUNT_CREATIVE=0; COUNT_SURVIVAL=0
 SUM_CREATIVE=0;   SUM_SURVIVAL=0
 ROWS=""
 
-for f in $FILES; do
+# Bedrockifier names backup files after the world's display name from
+# levelname.txt, which can differ from LEVEL_NAME and can contain spaces.
+# Build a line-safe file list and compare the parsed display name literally.
+TMP_FILES="/tmp/_backup_files.$"
+find "$BACKUP_DIR" \
+  -maxdepth 1 \
+  -type f \
+  -name "*.${YDAY}-*.mcworld" \
+  -print > "$TMP_FILES" 2>/dev/null || true
+
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+
   base=$(basename "$f")
+  stem="${base%.mcworld}"
+  ts="${stem##*.}"
+  backup_world="${stem%.*}"
   world=""
-  if backup_creative_enabled && [ "${base#${CREATIVE_WORLD}.}" != "$base" ]; then
+
+  if backup_creative_enabled && [ "$backup_world" = "$CREATIVE_WORLD" ]; then
     world="Creative"
-  elif backup_survival_enabled && [ "${base#${SURVIVAL_WORLD}.}" != "$base" ]; then
+  elif backup_survival_enabled && [ "$backup_world" = "$SURVIVAL_WORLD" ]; then
     world="Survival"
   else
     continue
   fi
-  ts="${base#*.}"; ts="${ts%.mcworld}"
+
   size_bytes=$(stat -c %s "$f" 2>/dev/null || stat -f %z "$f" 2>/dev/null || echo 0)
   if [ "$world" = "Creative" ]; then
     COUNT_CREATIVE=$((COUNT_CREATIVE+1)); SUM_CREATIVE=$((SUM_CREATIVE+size_bytes))
@@ -125,7 +159,9 @@ for f in $FILES; do
     COUNT_SURVIVAL=$((COUNT_SURVIVAL+1)); SUM_SURVIVAL=$((SUM_SURVIVAL+size_bytes))
   fi
   ROWS="${ROWS}${ts}|${world}|${base}|${size_bytes}|${ts}\n"
-done
+done < "$TMP_FILES"
+
+rm -f "$TMP_FILES"
 
 OK=1
 BACKUP_TARGET_COUNT="$(enabled_backup_world_count 2>/dev/null || printf '0')"
