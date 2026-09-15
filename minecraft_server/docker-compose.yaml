@@ -37,11 +37,11 @@ services:
       - |
         set -euo pipefail
         definitions=/etc/bds-property-definitions.json
-        if ! jq -e 'has("transport")' "$definitions" >/dev/null 2>&1; then
-          tmp="$(mktemp)"
-          jq '. + {"transport":{"env":"TRANSPORT","allowed":["nethernet"]}}' "$definitions" > "$tmp"
-          cat "$tmp" > "$definitions"
-          rm -f "$tmp"
+        if ! jq -e 'has("transport")' "$$definitions" >/dev/null 2>&1; then
+          tmp="$$(mktemp)"
+          jq '. + {"transport":{"env":"TRANSPORT","allowed":["nethernet"]}}' "$$definitions" > "$$tmp"
+          cat "$$tmp" > "$$definitions"
+          rm -f "$$tmp"
         fi
         exec /opt/demoter-entry.sh
     volumes:
@@ -100,11 +100,11 @@ services:
       - |
         set -euo pipefail
         definitions=/etc/bds-property-definitions.json
-        if ! jq -e 'has("transport")' "$definitions" >/dev/null 2>&1; then
-          tmp="$(mktemp)"
-          jq '. + {"transport":{"env":"TRANSPORT","allowed":["nethernet"]}}' "$definitions" > "$tmp"
-          cat "$tmp" > "$definitions"
-          rm -f "$tmp"
+        if ! jq -e 'has("transport")' "$$definitions" >/dev/null 2>&1; then
+          tmp="$$(mktemp)"
+          jq '. + {"transport":{"env":"TRANSPORT","allowed":["nethernet"]}}' "$$definitions" > "$$tmp"
+          cat "$$tmp" > "$$definitions"
+          rm -f "$$tmp"
         fi
         exec /opt/demoter-entry.sh
     volumes:
@@ -164,13 +164,13 @@ services:
       - |
         set -euo pipefail
         config=/config/config.yml
-        deadline=$((SECONDS + 180))
-        while [ ! -f "$config" ] && [ "$SECONDS" -lt "$deadline" ]; do
-          echo "[backup-wait] waiting for $config"
+        deadline=$$((SECONDS + 180))
+        while [ ! -f "$$config" ] && [ "$$SECONDS" -lt "$$deadline" ]; do
+          echo "[backup-wait] waiting for $$config"
           sleep 2
         done
-        if [ ! -f "$config" ]; then
-          echo "[backup-wait] config missing after 180s: $config" >&2
+        if [ ! -f "$$config" ]; then
+          echo "[backup-wait] config missing after 180s: $$config" >&2
           exit 1
         fi
         if [ -x /opt/bedrock/bedrockifier ]; then
