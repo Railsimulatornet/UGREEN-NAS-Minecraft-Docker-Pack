@@ -176,7 +176,7 @@ services:
         if [ -x /opt/bedrock/bedrockifier ]; then
           /opt/bedrock/bedrockifier clear-host-keys >/dev/null 2>&1 || true
         fi
-        exec /usr/local/bin/entrypoint-demoter --match /data --debug --stdin-on-term stop /opt/bedrock/bedrockifierd
+        exec /opt/bedrock/entry.sh
     security_opt: ["no-new-privileges:true"]
     logging:
       driver: json-file
