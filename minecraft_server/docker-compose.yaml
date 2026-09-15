@@ -47,6 +47,7 @@ services:
     volumes:
       - ${CREATIVE_DATA_DIR}:/data
     ports:
+      - "${CREATIVE_HOST_PORT_UDP}:19132/tcp"
       - "${CREATIVE_HOST_PORT_UDP}:19132/udp"
       - "${CREATIVE_SSH_HOST_PORT}:2222/tcp"
     healthcheck:

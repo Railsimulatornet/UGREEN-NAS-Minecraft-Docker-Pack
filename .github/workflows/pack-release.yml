@@ -166,7 +166,7 @@ jobs:
 
           ### Änderungen
 
-          - Minecraft Bedrock 1.26.51.1 startet jetzt korrekt mit transport=nethernet.
+          - Minecraft Bedrock 1.26.51.1 funktioniert jetzt mit NetherNet auf Creative und Survival, auch wenn Creative einen abweichenden Port wie 19133 verwendet.
           - Backups funktionieren wieder zuverlässig und verwenden den nativen Bedrockifier-Start.
           - Der tägliche Backup-Bericht erkennt Weltnamen mit Leerzeichen wie „Meine Welt“ korrekt.
           - Autoheal ist jetzt auf den Minecraft-Backup-Container begrenzt und greift nicht mehr auf andere Docker-Container des Hosts zu.
@@ -182,7 +182,7 @@ jobs:
 
           ### Changes
 
-          - Minecraft Bedrock 1.26.51.1 now starts correctly with transport=nethernet.
+          - Minecraft Bedrock 1.26.51.1 now works with NetherNet on Creative and Survival, including Creative setups that use a different port such as 19133.
           - Backups are reliable again and use Bedrockifier's native startup.
           - The daily backup report now handles world names with spaces such as “Meine Welt” correctly.
           - Autoheal is now limited to the Minecraft backup container and no longer touches unrelated Docker containers on the host.
