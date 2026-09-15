@@ -166,23 +166,22 @@ jobs:
 
           ### Änderungen
 
-          - neuer automatischer Bedrock-1.26-Kompatibilitätspatcher für Add-ons während der Installation
-          - Backpacks-Fix: inkompatible Laufzeit-Imports aus \`@minecraft/server\` werden im temporären Staging bereinigt; dadurch wird unter anderem der Fehler um \`BlockComponentBlockBreakEvent\` behoben
-          - Faramir's Furniture: gemischte \`render_method\`-Definitionen werden für aktuelle Bedrock-Versionen normalisiert
-          - eingebettete VCS-Metadaten wie \`.git\` werden vor der Installation aus dem temporären Staging entfernt
-          - Shell-Syntaxfehler im Add-on-Updater behoben
-          - der Add-on-Updater überspringt bei fehlender \`lib_stack.sh\` nicht mehr still alle Welten, sondern verwendet integrierte Profil-Fallbacks
-          - \`MC_SERVER_PROFILES\` wird explizit an den Maintenance-Container übergeben
-          - Maintenance-Image bleibt unverändert auf \`railsimulatornet/minecraft-maintenance:${maintenance_version}\`
-          - Autoheal bleibt unverändert auf \`railsimulatornet/autoheal:1.0.0\`
+          - Kompatibilität mit Bedrock Dedicated Server 1.26.51.1: `transport=nethernet` wird beim Start zuverlässig gesetzt, auch wenn das verwendete Bedrock-Image die Property noch nicht nativ als Umgebungsvariable abbildet
+          - der Bedrockifier-Backup-Container verwendet wieder den nativen Image-Entrypoint; dadurch entfällt die fehleranfällige Abhängigkeit von einem lokalen `backup/scripts`-Mount
+          - Tagesreport erkennt den tatsächlichen Welt-Anzeigenamen aus `levelname.txt`; dadurch funktionieren Backups mit abweichenden Namen und Leerzeichen wie `Meine Welt` korrekt
+          - temporäre Dateiliste des Backup-Reports ist pro Prozess eindeutig
+          - `WATCHDOG_BOOT_GRACE_SECS` wird an den Maintenance-Container weitergereicht
+          - Autoheal verwendet einen projektspezifischen Filter (`com.railsimulatornet.minecraft.autoheal=true`) und greift dadurch nicht mehr auf andere, ebenfalls mit Autoheal betriebene Container des Docker-Hosts zu
+          - Maintenance-Image bleibt unverändert auf `railsimulatornet/minecraft-maintenance:${maintenance_version}`
+          - Autoheal-Image bleibt unverändert auf `railsimulatornet/autoheal:1.0.0`
 
-          Die Änderungen wurden mit Bedrock Dedicated Server 1.26.45.1 und dem aktuellen Survival-Add-on-Set getestet.
+          Getestet wurden Creative und Survival mit Bedrock Dedicated Server 1.26.51.1, Bedrockifier-Backups für beide Welten, der tägliche SMTP-Report sowie der projektspezifische Autoheal-Scope.
 
-          Für vorhandene Installationen sollte die eigene produktive \`.env\` nicht vollständig überschrieben werden. Änderungen an \`docker-compose.yaml\` und den Maintenance-Skripten gezielt übernehmen.
+          Für vorhandene Installationen sollte die eigene produktive `.env` nicht vollständig überschrieben werden. Änderungen an `docker-compose.yaml` und den Maintenance-Skripten gezielt übernehmen.
 
-          Das PDF-Handbuch bleibt als grundlegende Installationsanleitung unverändert. Aktuelle technische Details stehen in \`README.md\`, \`.env\` und \`docker-compose.yaml\`.
+          Das PDF-Handbuch bleibt als grundlegende Installationsanleitung unverändert. Aktuelle technische Details stehen in `README.md`, `.env` und `docker-compose.yaml`.
 
-          Der zusätzliche ZIP-Download ist das bereinigte Benutzerpaket. Die im Repository weiterhin vorhandene \`Dockerfile.mc_maintenance\` dient ausschließlich als nachvollziehbare Build-Quelle für das veröffentlichte Maintenance-Image und ist im Benutzerpaket nicht enthalten.
+          Der zusätzliche ZIP-Download ist das bereinigte Benutzerpaket. Die im Repository weiterhin vorhandene `Dockerfile.mc_maintenance` dient ausschließlich als nachvollziehbare Build-Quelle für das veröffentlichte Maintenance-Image und ist im Benutzerpaket nicht enthalten.
 
           ## English
 
@@ -190,23 +189,22 @@ jobs:
 
           ### Changes
 
-          - new automatic Bedrock 1.26 add-on compatibility patcher during installation
-          - Backpacks fix: incompatible runtime imports from \`@minecraft/server\` are cleaned in temporary staging, including the \`BlockComponentBlockBreakEvent\` compatibility failure
-          - Faramir's Furniture: mixed \`render_method\` definitions are normalized for current Bedrock versions
-          - embedded VCS metadata such as \`.git\` is removed from temporary staging before deployment
-          - fixed the shell syntax error in the add-on updater
-          - if \`lib_stack.sh\` is missing, the add-on updater no longer silently skips all worlds and instead uses built-in profile fallbacks
-          - \`MC_SERVER_PROFILES\` is passed explicitly to the Maintenance container
-          - Maintenance image remains unchanged at \`railsimulatornet/minecraft-maintenance:${maintenance_version}\`
-          - Autoheal remains unchanged at \`railsimulatornet/autoheal:1.0.0\`
+          - compatibility with Bedrock Dedicated Server 1.26.51.1: `transport=nethernet` is now applied reliably at startup even when the Bedrock image does not yet expose that property natively as an environment variable
+          - the Bedrockifier backup container uses the image's native entrypoint again, removing the fragile dependency on a local `backup/scripts` mount
+          - the daily backup report now reads the world's actual display name from `levelname.txt`, so backups with different names and spaces such as `Meine Welt` are handled correctly
+          - the backup report now uses a process-unique temporary file list
+          - `WATCHDOG_BOOT_GRACE_SECS` is passed to the Maintenance container
+          - Autoheal now uses a project-specific filter (`com.railsimulatornet.minecraft.autoheal=true`) and therefore no longer touches unrelated host containers that may also use Autoheal
+          - Maintenance image remains unchanged at `railsimulatornet/minecraft-maintenance:${maintenance_version}`
+          - Autoheal image remains unchanged at `railsimulatornet/autoheal:1.0.0`
 
-          The changes were tested with Bedrock Dedicated Server 1.26.45.1 and the current Survival add-on set.
+          Creative and Survival were tested with Bedrock Dedicated Server 1.26.51.1, including Bedrockifier backups for both worlds, the daily SMTP report and the project-specific Autoheal scope.
 
-          Existing customized production \`.env\` files should not be overwritten completely. Apply changes to \`docker-compose.yaml\` and the Maintenance scripts selectively.
+          Existing customized production `.env` files should not be overwritten completely. Apply changes to `docker-compose.yaml` and the Maintenance scripts selectively.
 
-          The PDF manual remains unchanged as the general installation guide. Current technical details are maintained in \`README.md\`, \`.env\` and \`docker-compose.yaml\`.
+          The PDF manual remains unchanged as the general installation guide. Current technical details are maintained in `README.md`, `.env` and `docker-compose.yaml`.
 
-          The additional ZIP download is the clean user package. \`Dockerfile.mc_maintenance\` remains in the repository only as the reproducible build source for the published Maintenance image and is not included in the user package.
+          The additional ZIP download is the clean user package. `Dockerfile.mc_maintenance` remains in the repository only as the reproducible build source for the published Maintenance image and is not included in the user package.
           EOF
 
       - name: Create GitHub release
