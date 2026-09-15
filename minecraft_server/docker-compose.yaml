@@ -28,8 +28,22 @@ services:
       ALLOW_CHEATS: "${CREATIVE_ALLOW_CHEATS}"
       ENABLE_SSH: "${CREATIVE_ENABLE_SSH}"
       VERSION: "${CREATIVE_VERSION}"
+      TRANSPORT: "nethernet"
       SERVER_PORT: "19132"
       LEVEL_SEED: "${CREATIVE_LEVEL_SEED}"
+    entrypoint:
+      - /bin/bash
+      - -lc
+      - |
+        set -euo pipefail
+        definitions=/etc/bds-property-definitions.json
+        if ! jq -e 'has("transport")' "$definitions" >/dev/null 2>&1; then
+          tmp="$(mktemp)"
+          jq '. + {"transport":{"env":"TRANSPORT","allowed":["nethernet"]}}' "$definitions" > "$tmp"
+          cat "$tmp" > "$definitions"
+          rm -f "$tmp"
+        fi
+        exec /opt/demoter-entry.sh
     volumes:
       - ${CREATIVE_DATA_DIR}:/data
     ports:
@@ -77,8 +91,22 @@ services:
       ITEM_TRANSACTION_LOGGING_ENABLED: "${SURVIVAL_ITEM_TRANSACTION_LOGGING_ENABLED}"
       ENABLE_SSH: "${SURVIVAL_ENABLE_SSH}"
       VERSION: "${SURVIVAL_VERSION}"
+      TRANSPORT: "nethernet"
       SERVER_PORT: "19132"
       LEVEL_SEED: "${SURVIVAL_LEVEL_SEED}"
+    entrypoint:
+      - /bin/bash
+      - -lc
+      - |
+        set -euo pipefail
+        definitions=/etc/bds-property-definitions.json
+        if ! jq -e 'has("transport")' "$definitions" >/dev/null 2>&1; then
+          tmp="$(mktemp)"
+          jq '. + {"transport":{"env":"TRANSPORT","allowed":["nethernet"]}}' "$definitions" > "$tmp"
+          cat "$tmp" > "$definitions"
+          rm -f "$tmp"
+        fi
+        exec /opt/demoter-entry.sh
     volumes:
       - ${SURVIVAL_DATA_DIR}:/data
     ports:
@@ -119,9 +147,8 @@ services:
       - ${BACKUP_DATA_DIR}:/data
       - ${CREATIVE_DATA_DIR}:/creative:ro
       - ${SURVIVAL_DATA_DIR}:/survival:ro
-      - ./backup/scripts:/backup_scripts_ro:ro
     labels:
-      - autoheal=${AUTOHEAL_LABEL_ENABLED}
+      - "${MINECRAFT_AUTOHEAL_LABEL:-com.railsimulatornet.minecraft.autoheal}=${MINECRAFT_AUTOHEAL_LABEL_VALUE:-true}"
       - autoheal.stop.timeout=${AUTOHEAL_DEFAULT_STOP_TIMEOUT}
       - wud.watch=${WUD_WATCH_ENABLED}
       - wud.watch.digest=${WUD_WATCH_DIGEST}
@@ -131,7 +158,25 @@ services:
       interval: ${BACKUP_HEALTHCHECK_INTERVAL}
       timeout: ${BACKUP_HEALTHCHECK_TIMEOUT}
       retries: 3
-    entrypoint: ["/bin/bash", "/backup_scripts_ro/backup_entrypoint.sh"]
+    entrypoint:
+      - /bin/bash
+      - -lc
+      - |
+        set -euo pipefail
+        config=/config/config.yml
+        deadline=$((SECONDS + 180))
+        while [ ! -f "$config" ] && [ "$SECONDS" -lt "$deadline" ]; do
+          echo "[backup-wait] waiting for $config"
+          sleep 2
+        done
+        if [ ! -f "$config" ]; then
+          echo "[backup-wait] config missing after 180s: $config" >&2
+          exit 1
+        fi
+        if [ -x /opt/bedrock/bedrockifier ]; then
+          /opt/bedrock/bedrockifier clear-host-keys >/dev/null 2>&1 || true
+        fi
+        exec /usr/local/bin/entrypoint-demoter --match /data --debug --stdin-on-term stop /opt/bedrock/bedrockifierd
     security_opt: ["no-new-privileges:true"]
     logging:
       driver: json-file
@@ -165,6 +210,7 @@ services:
       MC_SERVER_PROFILES: "${COMPOSE_PROFILES}"
       HEALTH_MAX_AGE_SECS: "${HEALTH_MAX_AGE_SECS}"
       WATCHDOG_MAX_AGE_SECS: "${WATCHDOG_MAX_AGE_SECS}"
+      WATCHDOG_BOOT_GRACE_SECS: "${WATCHDOG_BOOT_GRACE_SECS}"
       HOST_NAME: "${HOST_NAME}"
       DISPLAY_LIMIT: "${DISPLAY_LIMIT}"
       BACKUP_DIR: "/backup"
@@ -212,8 +258,8 @@ services:
       - ${AUTOHEAL_STATE_HOST_DIR}:/state
     environment:
       TZ: "${STACK_TZ}"
-      AUTOHEAL_CONTAINER_LABEL: "${AUTOHEAL_CONTAINER_LABEL}"
-      AUTOHEAL_CONTAINER_LABEL_VALUE: "${AUTOHEAL_CONTAINER_LABEL_VALUE}"
+      AUTOHEAL_CONTAINER_LABEL: "${MINECRAFT_AUTOHEAL_LABEL:-com.railsimulatornet.minecraft.autoheal}"
+      AUTOHEAL_CONTAINER_LABEL_VALUE: "${MINECRAFT_AUTOHEAL_LABEL_VALUE:-true}"
       AUTOHEAL_INTERVAL: "${AUTOHEAL_INTERVAL}"
       AUTOHEAL_START_PERIOD: "${AUTOHEAL_START_PERIOD}"
       AUTOHEAL_DEFAULT_STOP_TIMEOUT: "${AUTOHEAL_DEFAULT_STOP_TIMEOUT}"
