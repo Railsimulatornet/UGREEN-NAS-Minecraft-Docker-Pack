@@ -158,25 +158,6 @@ services:
       interval: ${BACKUP_HEALTHCHECK_INTERVAL}
       timeout: ${BACKUP_HEALTHCHECK_TIMEOUT}
       retries: 3
-    entrypoint:
-      - /bin/bash
-      - -lc
-      - |
-        set -euo pipefail
-        config=/config/config.yml
-        deadline=$$((SECONDS + 180))
-        while [ ! -f "$$config" ] && [ "$$SECONDS" -lt "$$deadline" ]; do
-          echo "[backup-wait] waiting for $$config"
-          sleep 2
-        done
-        if [ ! -f "$$config" ]; then
-          echo "[backup-wait] config missing after 180s: $$config" >&2
-          exit 1
-        fi
-        if [ -x /opt/bedrock/bedrockifier ]; then
-          /opt/bedrock/bedrockifier clear-host-keys >/dev/null 2>&1 || true
-        fi
-        exec /opt/bedrock/entry.sh
     security_opt: ["no-new-privileges:true"]
     logging:
       driver: json-file
