@@ -304,7 +304,7 @@ rsync_would_change() {
   local src="$1" dest="$2" root_for_chown="${3:-}"
   [[ ! -d "$dest" ]] && return 0
   local chown_flag=""; [ -n "$root_for_chown" ] && chown_flag="$(rsync_chown_for_root "$root_for_chown")"
-  local out; out="$(rsync -i $RSYNC_FLAGS_BASE $RSYNC_PERM_FLAGS $chown_flag --dry-run "$src/" "$dest/" || true)"
+  local out; out="$(rsync -i $RSYNC_FLAGS_BASE $RSYNC_PERM_FLAGS $chown_flag --no-times --dry-run "$src/" "$dest/" || true)"
   [[ -n "$out" ]]
 }
 
