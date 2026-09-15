@@ -166,15 +166,12 @@ jobs:
 
           ### Änderungen
 
-          - Minecraft Bedrock 1.26.51.1 funktioniert jetzt mit NetherNet auf Creative und Survival, auch wenn Creative einen abweichenden Port wie 19133 verwendet.
-          - Backups funktionieren wieder zuverlässig und verwenden den nativen Bedrockifier-Start.
-          - Der tägliche Backup-Bericht erkennt Weltnamen mit Leerzeichen wie „Meine Welt“ korrekt.
-          - Autoheal ist jetzt auf den Minecraft-Backup-Container begrenzt und greift nicht mehr auf andere Docker-Container des Hosts zu.
-          - Kleinere Verbesserungen am Watchdog und am Backup-Report.
+          - Der Add-on-Updater behandelt reine Zeitstempeländerungen nicht mehr als echtes Update.
+          - Dadurch gibt es keine unnötigen Add-on-Mails und Minecraft-Neustarts mehr, wenn sich am Add-on-Inhalt nichts geändert hat.
 
-          Getestet mit Creative und Survival unter Bedrock Dedicated Server 1.26.51.1.
+          Getestet mit dem Backpacks-Add-on in zwei aufeinanderfolgenden Läufen ohne erkannte Änderungen.
 
-          Hinweis für bestehende Installationen: Die eigene .env nicht überschreiben. Änderungen an docker-compose.yaml und den Maintenance-Skripten gezielt übernehmen.
+          Hinweis für bestehende Installationen: Die eigene .env nicht überschreiben. Für diesen Fix reicht die aktualisierte maintenance/scripts/addons_update.sh.
 
           ## English
 
@@ -182,15 +179,12 @@ jobs:
 
           ### Changes
 
-          - Minecraft Bedrock 1.26.51.1 now works with NetherNet on Creative and Survival, including Creative setups that use a different port such as 19133.
-          - Backups are reliable again and use Bedrockifier's native startup.
-          - The daily backup report now handles world names with spaces such as “Meine Welt” correctly.
-          - Autoheal is now limited to the Minecraft backup container and no longer touches unrelated Docker containers on the host.
-          - Minor improvements to the watchdog and backup report.
+          - The add-on updater no longer treats timestamp-only differences as real updates.
+          - This prevents unnecessary add-on emails and Minecraft restarts when the add-on content has not actually changed.
 
-          Tested with Creative and Survival on Bedrock Dedicated Server 1.26.51.1.
+          Tested with the Backpacks add-on in two consecutive runs with no changes detected.
 
-          Note for existing installations: Do not overwrite your customized .env. Apply changes to docker-compose.yaml and the Maintenance scripts selectively.
+          Note for existing installations: Do not overwrite your customized .env. For this fix, updating maintenance/scripts/addons_update.sh is sufficient.
           EOF
 
       - name: Create GitHub release
