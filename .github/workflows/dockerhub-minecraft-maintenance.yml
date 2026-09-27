@@ -53,11 +53,12 @@ jobs:
           minor="${version%.*}"
 
           {
-            echo "tags<<EOF"
+            echo "release_tags<<EOF"
             echo "${IMAGE_NAME}:${version}"
             echo "${IMAGE_NAME}:${minor}"
             echo "${IMAGE_NAME}:latest"
             echo "EOF"
+            echo "latest_tag=${IMAGE_NAME}:latest"
             echo "version=${version}"
           } >> "${GITHUB_OUTPUT}"
 
@@ -116,13 +117,13 @@ jobs:
             local/minecraft-maintenance:security
 
       - name: Log in to Docker Hub
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and publish image
+      - name: Build and publish immutable release tags
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: docker/build-push-action@v7
         with:
@@ -132,7 +133,24 @@ jobs:
           pull: true
           no-cache: true
           push: true
-          tags: ${{ steps.image.outputs.tags }}
+          tags: ${{ steps.image.outputs.release_tags }}
           labels: org.opencontainers.image.version=${{ steps.image.outputs.version }}
+          provenance: mode=max
+          sbom: true
+
+      - name: Refresh latest tag from scheduled security rebuild
+        if: github.event_name == 'schedule'
+        uses: docker/build-push-action@v7
+        with:
+          context: ./minecraft_server
+          file: ./minecraft_server/Dockerfile.mc_maintenance
+          platforms: linux/amd64,linux/arm64
+          pull: true
+          no-cache: true
+          push: true
+          tags: ${{ steps.image.outputs.latest_tag }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.image.outputs.version }}
+            org.opencontainers.image.description=Scheduled security rebuild of the latest tag
           provenance: mode=max
           sbom: true
