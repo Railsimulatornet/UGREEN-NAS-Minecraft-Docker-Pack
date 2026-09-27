@@ -4,6 +4,7 @@ FROM alpine:3.24
 # Maintenance image for the Minecraft Docker Pack
 # Alpine 3.24 receives current patch releases through the minor-version tag.
 # Installed packages are upgraded during each clean rebuild.
+# 1.0.3 security rebuild refreshes the Alpine package set, including libexpat.
 LABEL org.opencontainers.image.title="Minecraft Maintenance"
 LABEL org.opencontainers.image.description="Maintenance tools for the UGREEN Minecraft Docker Pack"
 LABEL org.opencontainers.image.source="https://github.com/Railsimulatornet/UGREEN-NAS-Minecraft-Docker-Pack"
