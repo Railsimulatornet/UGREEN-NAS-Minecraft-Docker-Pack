@@ -166,12 +166,12 @@ jobs:
 
           ### Änderungen
 
-          - Der Add-on-Updater behandelt reine Zeitstempeländerungen nicht mehr als echtes Update.
-          - Dadurch gibt es keine unnötigen Add-on-Mails und Minecraft-Neustarts mehr, wenn sich am Add-on-Inhalt nichts geändert hat.
+          - Das Maintenance-Image wurde auf `railsimulatornet/minecraft-maintenance:${maintenance_version}` aktualisiert.
+          - Das Image wird frisch aus Alpine 3.24 gebaut und enthält die aktuell verfügbaren Paket-Sicherheitsupdates.
+          - Der zuvor von Trivy gemeldete behebbare HIGH-Fund in libexpat ist im neuen Maintenance-Image behoben.
+          - Der bestehende Trivy-Gate blockiert weiterhin die Veröffentlichung bei behebbaren HIGH- oder CRITICAL-Funden.
 
-          Getestet mit dem Backpacks-Add-on in zwei aufeinanderfolgenden Läufen ohne erkannte Änderungen.
-
-          Hinweis für bestehende Installationen: Die eigene .env nicht überschreiben. Für diesen Fix reicht die aktualisierte maintenance/scripts/addons_update.sh.
+          Hinweis für bestehende Installationen: Die eigene .env nicht überschreiben. Für dieses Update reicht die neue docker-compose.yaml beziehungsweise die Aktualisierung des Maintenance-Image-Tags.
 
           ## English
 
@@ -179,12 +179,12 @@ jobs:
 
           ### Changes
 
-          - The add-on updater no longer treats timestamp-only differences as real updates.
-          - This prevents unnecessary add-on emails and Minecraft restarts when the add-on content has not actually changed.
+          - The maintenance image was updated to `railsimulatornet/minecraft-maintenance:${maintenance_version}`.
+          - The image is rebuilt from Alpine 3.24 and includes the currently available package security updates.
+          - The previously reported fixable HIGH finding in libexpat is resolved in the new maintenance image.
+          - The existing Trivy gate continues to block publication when fixable HIGH or CRITICAL findings are present.
 
-          Tested with the Backpacks add-on in two consecutive runs with no changes detected.
-
-          Note for existing installations: Do not overwrite your customized .env. For this fix, updating maintenance/scripts/addons_update.sh is sufficient.
+          Note for existing installations: Do not overwrite your customized .env. For this update, use the new docker-compose.yaml or update only the maintenance image tag.
           EOF
 
       - name: Create GitHub release
