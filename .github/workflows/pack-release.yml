@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - PACK_VERSION
+      - .github/release-title.txt
+      - .github/release-notes.md
       - .github/workflows/pack-release.yml
       - README.md
       - minecraft_server/**
@@ -12,6 +14,8 @@ on:
       - main
     paths:
       - PACK_VERSION
+      - .github/release-title.txt
+      - .github/release-notes.md
       - .github/workflows/pack-release.yml
   workflow_dispatch:
 
@@ -34,6 +38,19 @@ jobs:
           version="$(tr -d '[:space:]' < PACK_VERSION)"
           if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "PACK_VERSION must contain a version in X.Y.Z format." >&2
+            exit 1
+          fi
+
+          title="$(tr -d '\r\n' < .github/release-title.txt)"
+          expected_title="UGREEN Minecraft Docker Pack ${version}"
+
+          if [[ "$title" != "$expected_title" ]]; then
+            echo "Release title mismatch: expected '$expected_title', got '$title'." >&2
+            exit 1
+          fi
+
+          if ! grep -Fq "UGREEN Minecraft Docker Pack ${version}" .github/release-notes.md; then
+            echo "Release notes do not mention Docker Pack version ${version}." >&2
             exit 1
           fi
 
@@ -150,42 +167,26 @@ jobs:
           test -s "dist/${asset}"
           echo "ASSET=dist/${asset}" >> "$GITHUB_ENV"
 
-      - name: Create bilingual release notes
+      - name: Validate release metadata
         if: steps.release.outputs.publish == 'true'
         shell: bash
         env:
           VERSION: ${{ steps.release.outputs.version }}
         run: |
-          maintenance_version="$(
-            tr -d '[:space:]' < minecraft_server/MAINTENANCE_IMAGE_VERSION
-          )"
-          cat > release-notes.md <<EOF
-          ## Deutsch
+          set -euo pipefail
 
-          UGREEN Minecraft Docker Pack ${VERSION}
+          title="$(tr -d '\r\n' < .github/release-title.txt)"
+          expected_title="UGREEN Minecraft Docker Pack ${VERSION}"
 
-          ### Änderungen
+          if [[ "$title" != "$expected_title" ]]; then
+            echo "Release title mismatch: expected '$expected_title', got '$title'." >&2
+            exit 1
+          fi
 
-          - Das Maintenance-Image wurde auf `railsimulatornet/minecraft-maintenance:${maintenance_version}` aktualisiert.
-          - Das Image wird frisch aus Alpine 3.24 gebaut und enthält die aktuell verfügbaren Paket-Sicherheitsupdates.
-          - Der zuvor von Trivy gemeldete behebbare HIGH-Fund in libexpat ist im neuen Maintenance-Image behoben.
-          - Der bestehende Trivy-Gate blockiert weiterhin die Veröffentlichung bei behebbaren HIGH- oder CRITICAL-Funden.
-
-          Hinweis für bestehende Installationen: Die eigene .env nicht überschreiben. Für dieses Update reicht die neue docker-compose.yaml beziehungsweise die Aktualisierung des Maintenance-Image-Tags.
-
-          ## English
-
-          UGREEN Minecraft Docker Pack ${VERSION}
-
-          ### Changes
-
-          - The maintenance image was updated to `railsimulatornet/minecraft-maintenance:${maintenance_version}`.
-          - The image is rebuilt from Alpine 3.24 and includes the currently available package security updates.
-          - The previously reported fixable HIGH finding in libexpat is resolved in the new maintenance image.
-          - The existing Trivy gate continues to block publication when fixable HIGH or CRITICAL findings are present.
-
-          Note for existing installations: Do not overwrite your customized .env. For this update, use the new docker-compose.yaml or update only the maintenance image tag.
-          EOF
+          if ! grep -Fq "UGREEN Minecraft Docker Pack ${VERSION}" .github/release-notes.md; then
+            echo "Release notes do not mention Docker Pack version ${VERSION}." >&2
+            exit 1
+          fi
 
       - name: Create GitHub release
         if: steps.release.outputs.publish == 'true'
@@ -199,8 +200,8 @@ jobs:
 
           gh release create "$TAG" \
             --target "$GITHUB_SHA" \
-            --title "UGREEN Minecraft Docker Pack ${VERSION}" \
-            --notes-file release-notes.md \
+            --title "$(tr -d '\r\n' < .github/release-title.txt)" \
+            --notes-file .github/release-notes.md \
             --latest \
             "$ASSET"
 
