@@ -1,5 +1,9 @@
 # UGREEN Minecraft Docker Pack
 
+[![Maintenance Image + Security](https://github.com/Railsimulatornet/UGREEN-NAS-Minecraft-Docker-Pack/actions/workflows/dockerhub-minecraft-maintenance.yml/badge.svg)](https://github.com/Railsimulatornet/UGREEN-NAS-Minecraft-Docker-Pack/actions/workflows/dockerhub-minecraft-maintenance.yml)
+[![Compose Validation](https://github.com/Railsimulatornet/UGREEN-NAS-Minecraft-Docker-Pack/actions/workflows/compose-validate.yml/badge.svg)](https://github.com/Railsimulatornet/UGREEN-NAS-Minecraft-Docker-Pack/actions/workflows/compose-validate.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 ![UGREEN Minecraft Docker Pack](assets/DockerPack.png)
 
 ## Deutsch
