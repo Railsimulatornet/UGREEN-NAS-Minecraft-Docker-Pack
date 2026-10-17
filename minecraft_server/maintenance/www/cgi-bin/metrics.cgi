@@ -67,7 +67,7 @@ calc_ages(){ # in: lines "<ts> <file>"; out: echo LATEST_AGE + per-world to stdo
   ts_max=0
   # per-world latest ts in tmp file (name -> ts)
   tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT INT TERM
-  printf '%s\n' "$1" | while IFS=' ' read -r ts name; do
+  while IFS=' ' read -r ts name; do
     [ -n "${ts:-}" ] || continue
     base="$name"; base="${base%%.*}"
     # track per world
@@ -80,7 +80,9 @@ calc_ages(){ # in: lines "<ts> <file>"; out: echo LATEST_AGE + per-world to stdo
     fi
     # latest overall
     if awk -v a="$ts" -v b="$ts_max" 'BEGIN{exit !(a>b)}'; then ts_max="$ts"; fi
-  done
+  done <<BACKUP_TIMESTAMPS
+$1
+BACKUP_TIMESTAMPS
 
   if awk -v m="$ts_max" 'BEGIN{exit !(m>0)}'; then
     LATEST_AGE=$(( NOW - ${ts_max%.*} ))
