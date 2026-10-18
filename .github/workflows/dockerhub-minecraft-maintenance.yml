@@ -2,155 +2,171 @@ name: Minecraft Maintenance Image
 
 on:
   schedule:
-    - cron: "23 4 * * 0"
+    - cron: '23 4 * * 0'
   pull_request:
     paths:
-      - "minecraft_server/Dockerfile.mc_maintenance"
-      - "minecraft_server/MAINTENANCE_IMAGE_VERSION"
-      - ".github/workflows/dockerhub-minecraft-maintenance.yml"
+      - minecraft_server/Dockerfile.mc_maintenance
+      - minecraft_server/MAINTENANCE_IMAGE_VERSION
+      - .github/scripts/**
+      - .github/workflows/dockerhub-minecraft-maintenance.yml
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
-      - "minecraft_server/Dockerfile.mc_maintenance"
-      - "minecraft_server/MAINTENANCE_IMAGE_VERSION"
-      - ".github/workflows/dockerhub-minecraft-maintenance.yml"
+      - minecraft_server/Dockerfile.mc_maintenance
+      - minecraft_server/MAINTENANCE_IMAGE_VERSION
+      - .github/scripts/**
+      - .github/workflows/dockerhub-minecraft-maintenance.yml
   workflow_dispatch:
 
-env:
-  IMAGE_NAME: railsimulatornet/minecraft-maintenance
-  VERSION_FILE: minecraft_server/MAINTENANCE_IMAGE_VERSION
+permissions:
+  contents: read
+
+concurrency:
+  group: minecraft-maintenance-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       contents: read
-
+      security-events: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Prepare image tags
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Install validation and image-copy tools
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends shellcheck skopeo
+      - name: Validate publication and scanner failure handling
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          shellcheck .github/scripts/*.sh
+          python3 -m unittest discover -s .github/scripts -p 'test_*.py' -v
+      - name: Select image version and publication mode
         id: image
         shell: bash
         run: |
-          set -euo pipefail
-
-          version="$(tr -d '[:space:]' < "${VERSION_FILE}")"
-
-          if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "${VERSION_FILE} must contain a version in X.Y.Z format." >&2
-            exit 1
-          fi
-
-          minor="${version%.*}"
-
-          {
-            echo "release_tags<<EOF"
-            echo "${IMAGE_NAME}:${version}"
-            echo "${IMAGE_NAME}:${minor}"
-            echo "${IMAGE_NAME}:latest"
-            echo "EOF"
-            echo "latest_tag=${IMAGE_NAME}:latest"
-            echo "version=${version}"
-          } >> "${GITHUB_OUTPUT}"
-
-      - name: Build security candidate
-        uses: docker/build-push-action@v7
+          set -Eeuo pipefail
+          python3 .github/scripts/maintenance_metadata.py
+          mkdir -p "$RUNNER_TEMP/maintenance-image"
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
+        with:
+          platforms: arm64
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      - name: Build both architectures once
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: ./minecraft_server
           file: ./minecraft_server/Dockerfile.mc_maintenance
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           pull: true
           no-cache: true
-          load: true
           push: false
-          tags: local/minecraft-maintenance:security
-          provenance: false
-          sbom: false
-          
-      - name: Show security relevant package versions
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          echo "============================================================"
-          echo " Minecraft Maintenance - installed security package versions"
-          echo "============================================================"
-
-          docker run --rm \
-            --entrypoint /bin/sh \
-            local/minecraft-maintenance:security \
-            -ec '
-              echo
-              echo "=== Alpine ==="
-              cat /etc/alpine-release
-
-              echo
-              echo "=== Installed package versions ==="
-              apk info -v | grep -E "^(jq|rsync|util-linux)-" || true
-
-              echo
-              echo "=== Repository policy ==="
-              apk policy jq rsync util-linux
-            '
-            
-      - name: Security gate with Trivy
-        shell: bash
-        run: |
-          set -euo pipefail
-          docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            ghcr.io/aquasecurity/trivy:latest \
-            image \
-            --exit-code 1 \
-            --ignore-unfixed \
-            --severity HIGH,CRITICAL \
-            --pkg-types os,library \
-            local/minecraft-maintenance:security
-
-      - name: Log in to Docker Hub
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
-        uses: docker/login-action@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and publish immutable release tags
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        uses: docker/build-push-action@v7
-        with:
-          context: ./minecraft_server
-          file: ./minecraft_server/Dockerfile.mc_maintenance
-          platforms: linux/amd64,linux/arm64
-          pull: true
-          no-cache: true
-          push: true
-          tags: ${{ steps.image.outputs.release_tags }}
-          labels: org.opencontainers.image.version=${{ steps.image.outputs.version }}
-          provenance: mode=max
-          sbom: true
-
-      - name: Refresh latest tag from scheduled security rebuild
-        if: github.event_name == 'schedule'
-        uses: docker/build-push-action@v7
-        with:
-          context: ./minecraft_server
-          file: ./minecraft_server/Dockerfile.mc_maintenance
-          platforms: linux/amd64,linux/arm64
-          pull: true
-          no-cache: true
-          push: true
-          tags: ${{ steps.image.outputs.latest_tag }}
+          tags: minecraft-maintenance:ci
           labels: |
             org.opencontainers.image.version=${{ steps.image.outputs.version }}
-            org.opencontainers.image.description=Scheduled security rebuild of the latest tag
+            org.opencontainers.image.revision=${{ github.sha }}
+          outputs: type=oci,dest=${{ runner.temp }}/maintenance-image/image.tar
           provenance: mode=max
           sbom: true
+      - name: Verify and load the exact architecture candidates
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          archive="$RUNNER_TEMP/maintenance-image/image.tar"
+          skopeo copy --all --preserve-digests "oci-archive:$archive" "oci:$RUNNER_TEMP/maintenance-layout"
+          skopeo inspect --raw "oci-archive:$archive" > "$RUNNER_TEMP/archive.json"
+          skopeo inspect --raw "oci:$RUNNER_TEMP/maintenance-layout" > "$RUNNER_TEMP/layout.json"
+          cmp "$RUNNER_TEMP/archive.json" "$RUNNER_TEMP/layout.json"
+          for arch in amd64 arm64; do
+            skopeo --override-os linux --override-arch "$arch" copy \
+              "oci-archive:$archive" "docker-daemon:minecraft-maintenance:ci-$arch"
+          done
+      - name: Exercise installed tools on both architectures
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for arch in amd64 arm64; do
+            docker run --rm --network none --platform "linux/$arch" \
+              --entrypoint /bin/sh "minecraft-maintenance:ci-$arch" -ec '
+                cat /etc/alpine-release
+                /bin/bash --version
+                python3 --version
+                jq --version
+                rsync --version
+                lighttpd -v
+                docker --version
+              '
+          done
+      - name: Scan both architectures and enforce security gates
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker pull ghcr.io/aquasecurity/trivy:latest
+          TRIVY_IMAGE="$(docker image inspect ghcr.io/aquasecurity/trivy:latest --format '{{.Id}}')"
+          [[ "$TRIVY_IMAGE" =~ ^sha256:[a-f0-9]{64}$ ]]
+          export TRIVY_IMAGE
+          failed=0
+          for arch in amd64 arm64; do
+            if ! bash .github/scripts/scan-maintenance-image.sh \
+                "$RUNNER_TEMP/maintenance-layout" "linux/$arch" "$PWD/trivy-results/$arch"; then
+              failed=1
+            fi
+          done
+          exit "$failed"
+      - name: Upload AMD64 scan findings
+        if: ${{ always() && hashFiles('trivy-results/amd64/trivy.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4
+        with:
+          sarif_file: trivy-results/amd64/trivy.sarif
+          category: minecraft-maintenance-amd64
+      - name: Upload ARM64 scan findings
+        if: ${{ always() && hashFiles('trivy-results/arm64/trivy.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4
+        with:
+          sarif_file: trivy-results/arm64/trivy.sarif
+          category: minecraft-maintenance-arm64
+      - name: Retain complete scan reports
+        if: ${{ always() && hashFiles('trivy-results/**') != '' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: minecraft-maintenance-trivy-results
+          path: trivy-results/
+          retention-days: 30
+      - name: Checksum the verified image
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd "$RUNNER_TEMP/maintenance-image"
+          sha256sum image.tar > image.sha256
+      - name: Retain the verified multi-platform image
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: minecraft-maintenance-verified-image
+          path: ${{ runner.temp }}/maintenance-image/
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: error
+      - name: Publish the verified image without rebuilding
+        if: ${{ github.repository == 'Railsimulatornet/UGREEN-NAS-Minecraft-Docker-Pack' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && steps.image.outputs.publication != 'none' }}
+        shell: bash
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          IMAGE_VERSION: ${{ steps.image.outputs.version }}
+          PUBLICATION_MODE: ${{ steps.image.outputs.publication }}
+        run: |
+          set -Eeuo pipefail
+          (cd "$RUNNER_TEMP/maintenance-image" && sha256sum --check image.sha256)
+          bash .github/scripts/publish-maintenance-image.sh \
+            "$RUNNER_TEMP/maintenance-image/image.tar" "$IMAGE_VERSION" "$PUBLICATION_MODE"
