@@ -126,13 +126,13 @@ jobs:
           exit "$failed"
       - name: Upload AMD64 scan findings
         if: ${{ always() && hashFiles('trivy-results/amd64/trivy.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
         with:
           sarif_file: trivy-results/amd64/trivy.sarif
           category: minecraft-maintenance-amd64
       - name: Upload ARM64 scan findings
         if: ${{ always() && hashFiles('trivy-results/arm64/trivy.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
         with:
           sarif_file: trivy-results/arm64/trivy.sarif
           category: minecraft-maintenance-arm64
