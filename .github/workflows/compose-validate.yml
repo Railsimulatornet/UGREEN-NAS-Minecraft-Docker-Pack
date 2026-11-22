@@ -38,7 +38,7 @@ jobs:
             --env-file minecraft_server/.env \
             -f minecraft_server/docker-compose.yaml \
             config --quiet
-      - name: Verify pinned maintenance and Autoheal integration
+      - name: Verify maintained channel and Autoheal integration
         shell: bash
         run: |
           set -euo pipefail
@@ -81,7 +81,7 @@ jobs:
               fail("minecraftserver_maintenance service is missing")
 
           expected_maintenance_image = (
-              f"railsimulatornet/minecraft-maintenance:{maintenance_version}"
+              "railsimulatornet/minecraft-maintenance:latest"
           )
 
           actual_maintenance_image = maintenance.get("image")

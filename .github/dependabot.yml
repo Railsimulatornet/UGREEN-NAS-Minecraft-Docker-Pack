@@ -11,3 +11,10 @@ updates:
         update-types: [patch]
       actions-minor:
         update-types: [minor]
+
+  - package-ecosystem: docker
+    directory: /minecraft_server
+    schedule:
+      interval: weekly
+      day: thursday
+    open-pull-requests-limit: 3
