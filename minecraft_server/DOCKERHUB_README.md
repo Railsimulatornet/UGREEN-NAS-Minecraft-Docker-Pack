@@ -28,7 +28,7 @@ Minecraft Maintenance stellt die Wartungsumgebung für das [UGREEN Minecraft Doc
 Die Maintenance-Service-Konfiguration verwendet diesen Image-Eintrag:
 
 ```yaml
-image: railsimulatornet/minecraft-maintenance:1.0.3
+image: railsimulatornet/minecraft-maintenance:latest
 ```
 
 Die vollständigen Startbefehle, Einstellungen und Voraussetzungen stehen in der [zweisprachigen Projektanleitung](https://github.com/Railsimulatornet/UGREEN-NAS-Minecraft-Docker-Pack#deutsch).
@@ -37,13 +37,17 @@ Die vollständigen Startbefehle, Einstellungen und Voraussetzungen stehen in der
 
 | Tag | Bedeutung |
 | --- | --- |
-| `1.0.3` | Fester Maintenance-Release im aktuellen Docker Pack |
+| `1.0.4` | Fester Maintenance-Release im aktuellen Docker Pack |
 | `1.0` | Folgt neuen Releases der Reihe 1.0 |
 | `latest` | Aktueller geprüfter Build einschließlich wöchentlicher Wartungsbuilds |
 
-Wöchentliche Builds aktualisieren nur `latest`. Feste Versionstags bleiben erhalten. Beide Architekturen müssen die Prüfungen bestehen, bevor das geprüfte Image ohne weiteren Build veröffentlicht wird. Behebbare HIGH- oder CRITICAL-Funde und Scanfehler blockieren die Veröffentlichung.
+Die Beispielkonfiguration nutzt `latest`. Wöchentliche Builds am Samstag um 04:11 UTC aktualisieren diesen Kanal. Feste Versionstags bleiben erhalten. Beide Architekturen müssen die Prüfungen bestehen, bevor das geprüfte Image ohne weiteren Build veröffentlicht wird. Behebbare HIGH- oder CRITICAL-Funde und Scanfehler blockieren die Veröffentlichung.
 
 Behalte bei Updates deine `.env`, Welten, Backups, Addons und Autoheal-Daten. Aktualisiere den bestehenden Docker-Stack nach der [Projektanleitung](https://github.com/Railsimulatornet/UGREEN-NAS-Minecraft-Docker-Pack#aktualisierung).
+
+### Betriebsprüfung
+
+Das Image enthält eine lokale Zustandsprüfung für Cron, seine vorgesehenen Wartungsaufträge, die benötigten Skripte und die HTTP-Statusseite. Sie benötigt keine zusätzlichen Dateien auf dem NAS und verändert keine Container oder Sicherungen. Sie bestätigt keine erfolgreiche Ausführung vergangener Wartungsaufträge oder Backups.
 
 ### Sicherheit und Dokumentation
 
@@ -80,7 +84,7 @@ Minecraft Maintenance provides the maintenance environment for the [UGREEN Minec
 The maintenance service uses this image entry:
 
 ```yaml
-image: railsimulatornet/minecraft-maintenance:1.0.3
+image: railsimulatornet/minecraft-maintenance:latest
 ```
 
 Full startup commands, settings and requirements are in the [bilingual project guide](https://github.com/Railsimulatornet/UGREEN-NAS-Minecraft-Docker-Pack#english).
@@ -89,11 +93,11 @@ Full startup commands, settings and requirements are in the [bilingual project g
 
 | Tag | Meaning |
 | --- | --- |
-| `1.0.3` | Fixed maintenance release in the current Docker Pack |
+| `1.0.4` | Fixed maintenance release in the current Docker Pack |
 | `1.0` | Follows new releases in the 1.0 series |
 | `latest` | Current verified build, including weekly maintenance builds |
 
-Weekly builds update only `latest`. Fixed version tags are retained. Both architectures must pass the checks before the verified image is published without rebuilding. Fixable HIGH or CRITICAL findings and scan errors block publication.
+The example configuration uses `latest`. Weekly builds on Saturday at 04:11 UTC update that channel. Fixed version tags are retained. Both architectures must pass the checks before the verified image is published without rebuilding. Fixable HIGH or CRITICAL findings and scan errors block publication.
 
 Keep your `.env`, worlds, backups, addons and Autoheal data when updating. Update the existing Docker stack using the [project guide](https://github.com/Railsimulatornet/UGREEN-NAS-Minecraft-Docker-Pack#updating).
 

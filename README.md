@@ -98,12 +98,18 @@ Der Backup-Healthcheck prüft den internen TCP-Port `8080`. Seine Startphase bet
 | Bestandteil | Stand in diesem Paket |
 | --- | --- |
 | Docker Pack | `1.1.5` |
-| Maintenance-Image | `railsimulatornet/minecraft-maintenance:1.0.3` |
+| Maintenance-Image | `railsimulatornet/minecraft-maintenance:latest` |
 | Autoheal-Image | `railsimulatornet/autoheal:1.0.0` |
 
 Das Maintenance-Image wird für `linux/amd64` und `linux/arm64` gebaut. Beide Architekturen werden geprüft, bevor dasselbe Image veröffentlicht wird. Behebbare HIGH- oder CRITICAL-Funde sowie Scanfehler blockieren die Veröffentlichung. Das Image enthält SBOM- und Provenance-Attestierungen.
 
-Der feste Maintenance-Tag `1.0.3` bleibt bei wöchentlichen Wartungsbuilds unverändert; diese aktualisieren `latest`. Die produktive Compose-Datei verwendet den festen Tag. Das im Pack festgelegte Autoheal-Image unterstützt ebenfalls AMD64 und ARM64.
+Die Compose-Datei verwendet den geprüften Kanal `latest`. Dieser erhält samstags um 04:11 UTC frische Betriebssystempakete und wird erst nach erfolgreichen Prüfungen beider Architekturen veröffentlicht. Feste Versionstags bleiben unverändert. Der neue feste Image-Stand ist `1.0.4`. Das im Pack festgelegte Autoheal-Image unterstützt ebenfalls AMD64 und ARM64.
+
+### Betriebsprüfung
+
+Das neue Image prüft alle 30 Sekunden den laufenden Cron-Hauptprozess, die geladenen Termine und Skripte für Bilanz, Neustart, Addons und Sicherungsüberwachung sowie den tatsächlich antwortenden lokalen Statusdienst. Der Aufruf lautet `python3 /usr/local/libexec/maintenance_health.py`. Er ist lesend und startet keine Wartungsaufgaben oder Container. Die vorhandenen NAS-Einbindungen funktionieren weiter. Die Prüfung bestätigt weder vergangene Cron-Ausführungen noch den Inhalt einer Sicherung; dafür bleiben die vorhandene Sicherungsüberwachung und die Statusausgabe zuständig.
+
+Bei der ersten Übernahme von einem Image ohne Zustandsprüfung muss der neue Kandidat mit der vorhandenen Konfiguration geprüft werden. Ein einfacher Image-Pull ändert den laufenden Container nicht. SecurityWatch kann nach kontrollierter Einführung den gepflegten Kanal übernehmen und die vorherige Image-ID für einen Rückfall aufbewahren.
 
 ### Aktualisierung
 
@@ -247,12 +253,12 @@ The backup healthcheck tests internal TCP port `8080`. The supplied configuratio
 | Component | Version in this package |
 | --- | --- |
 | Docker Pack | `1.1.5` |
-| Maintenance image | `railsimulatornet/minecraft-maintenance:1.0.3` |
+| Maintenance image | `railsimulatornet/minecraft-maintenance:latest` |
 | Autoheal image | `railsimulatornet/autoheal:1.0.0` |
 
 The maintenance image is built for `linux/amd64` and `linux/arm64`. Both architectures are checked before the same image is published. Fixable HIGH or CRITICAL findings and scan errors block publication. The image includes SBOM and provenance attestations.
 
-Weekly maintenance builds update `latest` while preserving the fixed maintenance tag `1.0.3`. The production Compose file uses the fixed tag. The Autoheal image selected by the pack also supports AMD64 and ARM64.
+The Compose file uses the verified `latest` channel. Saturday builds at 04:11 UTC refresh OS packages; publication requires both architecture checks. Fixed version tags remain immutable. The new fixed image version is `1.0.4`. The Autoheal image selected by the pack also supports AMD64 and ARM64.
 
 ### Updating
 

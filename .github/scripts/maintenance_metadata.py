@@ -7,7 +7,7 @@ import subprocess
 
 REPOSITORY = "Railsimulatornet/UGREEN-NAS-Minecraft-Docker-Pack"
 VERSION_FILE = Path("minecraft_server/MAINTENANCE_IMAGE_VERSION")
-IMAGE_INPUTS = {"minecraft_server/Dockerfile.mc_maintenance", str(VERSION_FILE)}
+IMAGE_INPUTS = {"minecraft_server/Dockerfile.mc_maintenance", str(VERSION_FILE), "minecraft_server/health/maintenance_health.py"}
 
 
 def validate_version(version):
@@ -16,15 +16,19 @@ def validate_version(version):
     return version
 
 
-def publication_mode(event_name, repository, ref, changed=()):
+def publication_mode(event_name, repository, ref, changed=(), manual_mode="latest"):
     if repository != REPOSITORY or ref != "refs/heads/main":
         return "none"
     if event_name == "schedule":
         return "latest"
     if event_name == "workflow_dispatch":
+        if manual_mode not in {"latest", "release"}:
+            raise ValueError("Invalid publication mode")
+        return manual_mode
+    if event_name == "push" and str(VERSION_FILE) in changed:
         return "release"
     if event_name == "push" and any(path in IMAGE_INPUTS for path in changed):
-        return "release"
+        return "latest"
     return "none"
 
 
@@ -42,7 +46,8 @@ def main():
                 ["git", "diff", "--name-only", before, after], text=True
             ).splitlines()
     mode = publication_mode(
-        event_name, os.environ["GITHUB_REPOSITORY"], os.environ["GITHUB_REF"], changed
+        event_name, os.environ["GITHUB_REPOSITORY"], os.environ["GITHUB_REF"], changed,
+        os.environ.get("INPUT_PUBLICATION_MODE") or "latest"
     )
     with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
         output.write(f"version={version}\npublication={mode}\n")

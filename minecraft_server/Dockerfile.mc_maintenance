@@ -33,3 +33,7 @@ RUN set -eux; \
         git; \
     update-ca-certificates; \
     [ -x /bin/bash ] || ln -sf /usr/bin/bash /bin/bash
+
+COPY health/maintenance_health.py /usr/local/libexec/maintenance_health.py
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD ["python3", "/usr/local/libexec/maintenance_health.py"]

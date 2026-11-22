@@ -1,7 +1,7 @@
 """Publication decisions for maintenance builds, without network access."""
 import unittest
 
-from maintenance_metadata import IMAGE_INPUTS, REPOSITORY, publication_mode, validate_version
+from maintenance_metadata import IMAGE_INPUTS, REPOSITORY, publication_mode, validate_version, VERSION_FILE
 
 
 class MetadataTests(unittest.TestCase):
@@ -13,7 +13,7 @@ class MetadataTests(unittest.TestCase):
 
     def test_only_image_source_pushes_publish_release(self):
         for path in IMAGE_INPUTS:
-            self.assertEqual(self.mode("push", [path]), "release")
+            self.assertEqual(self.mode("push", [path]), "release" if path == str(VERSION_FILE) else "latest")
         for path in ("README.md", ".github/workflows/dockerhub-minecraft-maintenance.yml",
                      ".github/scripts/maintenance_metadata.py"):
             self.assertEqual(self.mode("push", [path]), "none")
@@ -21,8 +21,12 @@ class MetadataTests(unittest.TestCase):
     def test_weekly_build_updates_only_latest(self):
         self.assertEqual(self.mode("schedule"), "latest")
 
-    def test_manual_main_build_checks_release(self):
-        self.assertEqual(self.mode("workflow_dispatch"), "release")
+    def test_manual_default_refreshes_latest_without_overwriting_a_release(self):
+        self.assertEqual(self.mode("workflow_dispatch"), "latest")
+        self.assertEqual(publication_mode("workflow_dispatch", REPOSITORY, "refs/heads/main",
+                                         manual_mode="release"), "release")
+        with self.assertRaises(ValueError):
+            publication_mode("workflow_dispatch", REPOSITORY, "refs/heads/main", manual_mode="bad")
 
     def test_other_repository_or_branch_cannot_publish(self):
         for event in ("push", "schedule", "workflow_dispatch"):

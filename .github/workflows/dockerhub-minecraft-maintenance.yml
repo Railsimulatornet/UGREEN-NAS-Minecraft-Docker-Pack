@@ -2,11 +2,13 @@ name: Minecraft Maintenance Image
 
 on:
   schedule:
-    - cron: '23 4 * * 0'
+    - cron: '11 4 * * 6'
   pull_request:
     paths:
       - minecraft_server/Dockerfile.mc_maintenance
       - minecraft_server/MAINTENANCE_IMAGE_VERSION
+      - minecraft_server/health/**
+      - minecraft_server/maintenance/**
       - .github/scripts/**
       - .github/workflows/dockerhub-minecraft-maintenance.yml
   push:
@@ -14,9 +16,17 @@ on:
     paths:
       - minecraft_server/Dockerfile.mc_maintenance
       - minecraft_server/MAINTENANCE_IMAGE_VERSION
+      - minecraft_server/health/**
+      - minecraft_server/maintenance/**
       - .github/scripts/**
       - .github/workflows/dockerhub-minecraft-maintenance.yml
   workflow_dispatch:
+    inputs:
+      publication_mode:
+        description: "Geprüftes Image veröffentlichen"
+        type: choice
+        default: latest
+        options: [latest, release]
 
 permissions:
   contents: read
@@ -52,6 +62,8 @@ jobs:
           python3 -m unittest discover -s .github/scripts -p 'test_*.py' -v
       - name: Select image version and publication mode
         id: image
+        env:
+          INPUT_PUBLICATION_MODE: ${{ inputs.publication_mode }}
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -107,6 +119,13 @@ jobs:
                 lighttpd -v
                 docker --version
               '
+          done
+      - name: Check the running maintenance service on both architectures
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for arch in amd64 arm64; do
+            bash .github/scripts/verify-maintenance-runtime.sh "minecraft-maintenance:ci-$arch"
           done
       - name: Scan both architectures and enforce security gates
         shell: bash
