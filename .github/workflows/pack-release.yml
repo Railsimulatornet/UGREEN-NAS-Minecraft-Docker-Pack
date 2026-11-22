@@ -64,7 +64,7 @@ jobs:
           fi
 
           grep -Fq \
-            "image: railsimulatornet/minecraft-maintenance:${maintenance_version}" \
+            "image: railsimulatornet/minecraft-maintenance:latest" \
             minecraft_server/docker-compose.yaml
           grep -Fq 'AUTOHEAL_IMAGE=railsimulatornet/autoheal:1.0.0' minecraft_server/.env
 
