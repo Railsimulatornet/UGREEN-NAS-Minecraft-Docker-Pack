@@ -1,1 +1,1 @@
-UGREEN Minecraft Docker Pack 1.1.5
+UGREEN Minecraft Docker Pack 1.1.6
