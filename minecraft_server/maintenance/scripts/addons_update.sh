@@ -251,6 +251,9 @@ if kind == "unknown":
 if not uuid:
   print(f"ERROR\t{p}\tno_uuid\t-", flush=True)
   sys.exit(0)
+if not isinstance(uuid, str) or not re.fullmatch(r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}", uuid):
+  print(f"ERROR\t{p}\tinvalid_uuid\t-", flush=True)
+  sys.exit(0)
 
 def as_ver(v):
   if isinstance(v, list) and len(v) >= 1:
@@ -329,10 +332,18 @@ rsync_chown_for_root() {
 
 PACKS_CHANGED=0
 
+valid_pack_uuid() {
+  [[ "$1" =~ ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$ ]]
+}
+
 copy_pack() {
   local src="$1" dest_root="$2" kind="$3" uuid="$4"
   local dest_dir
   LAST_COPY_CHANGED=0
+  if ! valid_pack_uuid "$uuid"; then
+    echo "$ERR_PREFIX invalid pack identifier; copy refused" >&2
+    return 1
+  fi
   if [[ "$kind" == "behavior" ]]; then dest_dir="$(bp_dir "$dest_root")"; else dest_dir="$(rp_dir "$dest_root")"; fi
   mkdir -p "$dest_dir/$uuid"
   # ensure dir ownership/mode so Bedrock UID/GID can modify/delete
@@ -387,14 +398,14 @@ collect_packs() {
   while IFS= read -r -d '' mf; do
     local line; line="$(parse_manifest "$mf")" || continue
     IFS=$'\t' read -r status path kind uuid vA vB vC name <<<"$line"
-    [[ "$status" != "OK" ]] && {
+    if [[ "$status" != "OK" ]] || ! valid_pack_uuid "$uuid"; then
       if command -v lang_is_de >/dev/null 2>&1 && lang_is_de; then
         echo "$WARN_PREFIX Manifest unlesbar: $mf"
       else
         echo "$WARN_PREFIX manifest unreadable: $mf"
       fi
       continue
-    }
+    fi
     if [[ "$kind" == "behavior" ]]; then
       found_b["$uuid"]="$vA:$vB:$vC:$(dirname "$mf"):$name"
     elif [[ "$kind" == "resource" ]]; then
