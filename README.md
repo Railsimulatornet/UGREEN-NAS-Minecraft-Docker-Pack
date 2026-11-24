@@ -115,24 +115,32 @@ Bei der ersten Übernahme von einem Image ohne Zustandsprüfung muss der neue Ka
 
 Behalte deine eigene `.env`, Welten, Backups, Addons und Autoheal-Daten. Übernimm neue Skripte und Compose-Änderungen gezielt in das bestehende Projekt. Vergleiche insbesondere neue oder geänderte `AUTOHEAL_*`-Werte und die oben beschriebene Label-Auswahl.
 
-Führe im vorhandenen Projektordner aus:
+Zeige die vorhandenen Container mit ihrem Compose-Projekt und Service an:
 
 ```bash
-docker compose config --quiet
-docker compose pull
-docker compose up -d
-docker compose ps
+docker ps -a --format '{{.Names}}  {{.Label "com.docker.compose.project"}}  {{.Label "com.docker.compose.service"}}'
+```
+
+Wähle einen Container deines Minecraft-Projekts, etwa den mit dem Service `minecraftserver_maintenance`. Setze `PROJECT` auf den angezeigten Projektnamen und `COMPOSE` auf den Pfad deiner vorhandenen Compose-Datei. Führe die Befehle im Projektordner mit deiner `.env` aus:
+
+```bash
+PROJECT='tatsächlicher-projektname'
+COMPOSE='./docker-compose.yaml'
+docker compose -p "$PROJECT" -f "$COMPOSE" config --quiet &&
+docker compose -p "$PROJECT" -f "$COMPOSE" pull &&
+docker compose -p "$PROJECT" -f "$COMPOSE" up -d &&
+docker compose -p "$PROJECT" -f "$COMPOSE" ps
 ```
 
 In UGOS kannst du das bestehende Projekt neu bereitstellen und dabei die aktuellen Images abrufen. Behalte die festen Image-Tags aus dem Paket bei, wenn du genau diesen Stand verwenden möchtest.
 
 ### Kontrolle und Sicherheit
 
-Prüfe nach Start und Update die Service-Zustände sowie die letzten Logs:
+Prüfe nach Start und Update die Service-Zustände und die Logs. Verwende denselben Projektnamen und dieselbe Compose-Datei:
 
 ```bash
-docker compose ps
-docker compose logs --tail=100 minecraftserver_backup minecraftserver_maintenance minecraftserver_autoheal
+docker compose -p "$PROJECT" -f "$COMPOSE" ps
+docker compose -p "$PROJECT" -f "$COMPOSE" logs --tail=100 minecraftserver_backup minecraftserver_maintenance minecraftserver_autoheal
 ```
 
 Kontrolliere bei Backup-Problemen `BACKUP_TARGETS`, die aktiven Profile und die eingebundenen Pfade. Bei Versandproblemen prüfst du `NOTIFY_CHANNEL` sowie die SMTP- oder Apprise-Einstellungen.
@@ -264,24 +272,32 @@ The Compose file uses the verified `latest` channel. Saturday builds at 04:11 UT
 
 Keep your customized `.env`, worlds, backups, addons and Autoheal data. Apply new scripts and Compose changes to the existing project. Compare new or changed `AUTOHEAL_*` values and the label selection described above.
 
-Run from the existing project directory:
+List the existing containers with their Compose project and service:
 
 ```bash
-docker compose config --quiet
-docker compose pull
-docker compose up -d
-docker compose ps
+docker ps -a --format '{{.Names}}  {{.Label "com.docker.compose.project"}}  {{.Label "com.docker.compose.service"}}'
+```
+
+Choose a container from your Minecraft project, such as the one with the `minecraftserver_maintenance` service. Set `PROJECT` to the project name shown and `COMPOSE` to the path of your existing Compose file. Run these commands from the project directory containing your `.env`:
+
+```bash
+PROJECT='actual-project-name'
+COMPOSE='./docker-compose.yaml'
+docker compose -p "$PROJECT" -f "$COMPOSE" config --quiet &&
+docker compose -p "$PROJECT" -f "$COMPOSE" pull &&
+docker compose -p "$PROJECT" -f "$COMPOSE" up -d &&
+docker compose -p "$PROJECT" -f "$COMPOSE" ps
 ```
 
 In UGOS, redeploy the existing project and pull its current images. Keep the fixed image tags supplied by the pack when you want to use that exact version.
 
 ### Checks and security
 
-After startup and updates, check service status and recent logs:
+After startup and updates, check service status and recent logs. Use the same project name and Compose file:
 
 ```bash
-docker compose ps
-docker compose logs --tail=100 minecraftserver_backup minecraftserver_maintenance minecraftserver_autoheal
+docker compose -p "$PROJECT" -f "$COMPOSE" ps
+docker compose -p "$PROJECT" -f "$COMPOSE" logs --tail=100 minecraftserver_backup minecraftserver_maintenance minecraftserver_autoheal
 ```
 
 For backup problems, check `BACKUP_TARGETS`, active profiles and mounted paths. For delivery problems, check `NOTIFY_CHANNEL` and your SMTP or Apprise settings.
